@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weltzeit-Karte – Einstellungen</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="page">
+    <header class="head">
+      <div>
+        <h1>Weltzeit-Karte</h1>
+        <p class="sub">Wähle die Städte aus, die auf der Karte im neuen Tab angezeigt werden. Änderungen werden sofort gespeichert und in offenen Tabs übernommen.</p>
+      </div>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+    </header>
+
+    <div class="toolbar">
+      <input id="search" type="search" placeholder="Stadt oder Zeitzone suchen …" autocomplete="off" aria-label="Städte durchsuchen">
+      <span id="count" class="count"></span>
+      <div class="actions">
+        <button id="selectAll" class="btn" type="button">Alle auswählen</button>
+        <button id="selectNone" class="btn" type="button">Keine</button>
+        <button id="reset" class="btn" type="button">Standard</button>
+      </div>
+    </div>
+
+    <main id="regions"></main>
+
+    <section class="region custom" aria-labelledby="customTitle">
+      <div class="region-head">
+        <h2 id="customTitle">Eigene Städte</h2>
+      </div>
+      <div id="customList" class="grid"></div>
+      <p id="customEmpty" class="hint">Noch keine eigenen Städte. Fehlt dir ein Ort? Füge ihn hier mit Zeitzone und Koordinaten hinzu.</p>
+
+      <form id="customForm" class="custom-form" novalidate>
+        <label>Name
+          <input name="name" type="text" required maxlength="40" placeholder="z. B. Bremen">
+        </label>
+        <label>Zeitzone
+          <input name="tz" type="text" required list="tzList" placeholder="z. B. Europe/Berlin" autocomplete="off">
+        </label>
+        <label>Breitengrad
+          <input name="lat" type="number" required step="any" min="-90" max="90" placeholder="53.08">
+        </label>
+        <label>Längengrad
+          <input name="lon" type="number" required step="any" min="-180" max="180" placeholder="8.80">
+        </label>
+        <button class="btn primary" type="submit">Hinzufügen</button>
+        <p id="formError" class="form-error" role="alert"></p>
+      </form>
+      <datalist id="tzList"></datalist>
+    </section>
+  </div>
+
+  <script src="cities.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
