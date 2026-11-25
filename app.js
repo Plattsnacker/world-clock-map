@@ -8,20 +8,40 @@ const LAT_RANGE = LAT_MAX - LAT_MIN;
 // Wird beim Start und bei Änderungen in den Einstellungen aus dem Speicher geladen (cities.js).
 let CITIES = resolveCities(DEFAULT_SETTINGS);
 
-const COLORS = {
-  oceanTop: '#0f1d33',
-  oceanBottom: '#0b1526',
-  land: '#25344f',
-  border: 'rgba(160, 180, 215, 0.22)',
-  band: 'rgba(255, 255, 255, 0.025)',
-  bandLine: 'rgba(255, 255, 255, 0.05)',
-  city: '#5cc8ff',
-  local: '#ffb04a',
-  sun: '#ffe066',
-  labelBg: 'rgba(8, 12, 24, 0.72)',
-  labelName: '#aab4c8',
-  labelTime: '#ffffff',
-};
+// Canvas-Farben, abgeleitet aus dem aktiven Theme (themes.js).
+let COLORS = canvasColors(resolveTheme(DEFAULT_THEME_STATE));
+
+function canvasColors(t) {
+  const dark = luminance(t.bg) < 0.4;
+  return {
+    oceanTop: t.oceanTop,
+    oceanBottom: t.oceanBottom,
+    land: t.land,
+    border: rgba(t.border, dark ? 0.25 : 0.45),
+    band: rgba(t.text, 0.025),
+    bandLine: rgba(t.text, 0.05),
+    city: t.accent,
+    local: t.local,
+    localBand: rgba(t.local, 0.07),
+    sun: t.sun,
+    sunGlow: rgba(t.sun, 0.55),
+    sunGlowEnd: rgba(t.sun, 0),
+    night: hexToRgb(t.night),
+    nightAlpha: t.nightAlpha,
+    leader: rgba(t.text, 0.45),
+    labelBg: rgba(t.label, dark ? 0.72 : 0.85),
+    labelName: mixHex(t.muted, t.text, 0.3),
+    labelTime: t.text,
+    dotStroke: dark ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.85)',
+  };
+}
+
+function setTheme(state) {
+  const theme = resolveTheme(state);
+  COLORS = canvasColors(theme);
+  applyThemeCss(theme);
+  if (cssW) { buildBaseLayer(); render(new Date()); }
+}
 
 const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -215,7 +235,8 @@ function buildNightLayer(sun) {
   const rad = Math.PI / 180;
   const sinD = Math.sin(sun.lat * rad), cosD = Math.cos(sun.lat * rad);
   const TWILIGHT = -12;    // Grad unter dem Horizont = volle Nacht
-  const MAX_ALPHA = 0.7;
+  const MAX_ALPHA = COLORS.nightAlpha;
+  const [nr, ng, nb] = COLORS.night;
 
   for (let y = 0; y < NIGHT_H; y++) {
     const lat = (LAT_MAX - (y + 0.5) / NIGHT_H * LAT_RANGE) * rad;
@@ -226,7 +247,7 @@ function buildNightLayer(sun) {
       let a = 0;
       if (alt < 0) a = alt <= TWILIGHT ? MAX_ALPHA : (alt / TWILIGHT) * MAX_ALPHA;
       const i = (y * NIGHT_W + x) * 4;
-      img.data[i] = 2; img.data[i + 1] = 5; img.data[i + 2] = 16;
+      img.data[i] = nr; img.data[i + 1] = ng; img.data[i + 2] = nb;
       img.data[i + 3] = Math.round(a * 255);
     }
   }
@@ -248,7 +269,7 @@ function render(now) {
   const localOff = -now.getTimezoneOffset() / 60;
   const lx0 = projX(Math.max(-180, localOff * 15 - 7.5));
   const lx1 = projX(Math.min(180, localOff * 15 + 7.5));
-  ctx.fillStyle = 'rgba(255, 176, 74, 0.07)';
+  ctx.fillStyle = COLORS.localBand;
   ctx.fillRect(lx0, 0, lx1 - lx0, cssH);
 
   // Nacht
@@ -260,8 +281,8 @@ function render(now) {
   if (sun.lat <= LAT_MAX && sun.lat >= LAT_MIN) {
     const sx = projX(sun.lon), sy = projY(sun.lat);
     const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, 22);
-    g.addColorStop(0, 'rgba(255, 224, 102, 0.55)');
-    g.addColorStop(1, 'rgba(255, 224, 102, 0)');
+    g.addColorStop(0, COLORS.sunGlow);
+    g.addColorStop(1, COLORS.sunGlowEnd);
     ctx.fillStyle = g;
     ctx.beginPath(); ctx.arc(sx, sy, 22, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = COLORS.sun;
@@ -340,7 +361,7 @@ function drawCities(now, localOff) {
     if (box.leader) {
       const cx = Math.max(box.x, Math.min(x, box.x + box.w));
       const cy = Math.max(box.y, Math.min(y, box.y + box.h));
-      ctx.strokeStyle = 'rgba(200, 215, 240, 0.45)';
+      ctx.strokeStyle = COLORS.leader;
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(cx, cy); ctx.stroke();
     }
@@ -363,7 +384,7 @@ function drawCities(now, localOff) {
     // Punkt
     ctx.fillStyle = accent;
     ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+    ctx.strokeStyle = COLORS.dotStroke;
     ctx.lineWidth = 1;
     ctx.stroke();
   }
@@ -425,10 +446,13 @@ function tick() {
 
 (async function init() {
   updateHeader(new Date());
-  const [map, settings] = await Promise.all([loadMap(), loadSettings()]);
+  const [map, settings, themeState] = await Promise.all([loadMap(), loadSettings(), loadThemeState()]);
   rings = map;
   CITIES = resolveCities(settings);
+  setTheme(themeState);
   resize();
+
+  onThemeChanged(setTheme);
 
   onSettingsChanged(s => {
     CITIES = resolveCities(s);
