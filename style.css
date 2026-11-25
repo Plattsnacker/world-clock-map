@@ -151,3 +151,28 @@ body {
 .band.edge:last-child  { text-align: right; }
 .band.edge .off { font-size: 9px; }
 .band.edge .time { font-size: 10px; }
+
+.dot-moon  { background: #f2f0e6; box-shadow: inset -3px 0 0 color-mix(in srgb, var(--bg) 70%, #000); }
+.legend [hidden] { display: none; }
+
+/* Tooltip für Sonne und Mond auf der Karte */
+.map-box { position: relative; }
+.map-tooltip {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel, var(--bg)) 92%, transparent);
+  box-shadow: 0 4px 16px var(--shadow);
+  color: var(--text);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.map-tooltip[hidden] { display: none; }
+.map-tooltip strong { font-size: 13px; font-weight: 600; }
+.map-tooltip span { color: var(--muted); }

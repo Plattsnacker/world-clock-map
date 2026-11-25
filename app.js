@@ -284,8 +284,15 @@ function moonPosition(d) {
     lon,
     illum: (1 - Math.cos(elong)) / 2,   // beleuchteter Anteil 0…1
     waxing: elong < Math.PI,
+    elong: elong / rad,                 // 0° = Neumond, 180° = Vollmond
   };
 }
+
+const MOON_PHASES = [
+  'Neumond', 'Zunehmende Sichel', 'Erstes Viertel', 'Zunehmender Mond',
+  'Vollmond', 'Abnehmender Mond', 'Letztes Viertel', 'Abnehmende Sichel',
+];
+const moonPhaseName = moon => MOON_PHASES[Math.round(moon.elong / 45) % 8];
 
 // Mondscheibe mit Phase, wie von der Nordhalbkugel gesehen (zunehmend = rechts hell).
 function drawMoon(x, y, r, moon) {
@@ -366,15 +373,26 @@ function render(now) {
   ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(nightLayer, 0, 0, cssW, cssH);
 
+  hoverTargets = [];
+
   // Mond
   if (SHOW_MOON) {
     const moon = moonPosition(now);
-    if (moon.lat <= LAT_MAX && moon.lat >= LAT_MIN) drawMoon(projX(moon.lon), projY(moon.lat), 7, moon);
+    if (moon.lat <= LAT_MAX && moon.lat >= LAT_MIN) {
+      const mx = projX(moon.lon), my = projY(moon.lat);
+      drawMoon(mx, my, 7, moon);
+      hoverTargets.push({
+        x: mx, y: my, r: 11,
+        title: 'Mond',
+        detail: `${moonPhaseName(moon)} · ${Math.round(moon.illum * 100)} % beleuchtet`,
+      });
+    }
   }
 
   // Sonne
   if (SHOW_SUN && sun.lat <= LAT_MAX && sun.lat >= LAT_MIN) {
     const sx = projX(sun.lon), sy = projY(sun.lat);
+    hoverTargets.push({ x: sx, y: sy, r: 11, title: 'Sonne', detail: 'steht hier im Zenit' });
     const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, 22);
     g.addColorStop(0, COLORS.sunGlow);
     g.addColorStop(1, COLORS.sunGlowEnd);
@@ -386,6 +404,43 @@ function render(now) {
 
   drawCities(now, localOff);
   renderBands(now, localOff);
+  updateTooltip();
+  updateLegend();
+}
+
+// ---------- Tooltip für Sonne und Mond ----------
+
+let hoverTargets = [];   // { x, y, r, title, detail } in CSS-Pixeln der Karte
+let mouse = null;        // letzte Mausposition über der Karte
+const tooltipEl = document.getElementById('mapTooltip');
+
+function updateTooltip() {
+  // Zuletzt gezeichnetes Objekt (Sonne über Mond) gewinnt bei Überlappung.
+  const hit = mouse && hoverTargets.findLast(t => Math.hypot(mouse.x - t.x, mouse.y - t.y) <= t.r);
+  if (!hit) { tooltipEl.hidden = true; return; }
+  tooltipEl.replaceChildren(
+    Object.assign(document.createElement('strong'), { textContent: hit.title }),
+    Object.assign(document.createElement('span'), { textContent: hit.detail }),
+  );
+  tooltipEl.hidden = false;
+  // Über dem Objekt anzeigen, am Kartenrand nach innen bzw. unten ausweichen.
+  const w = tooltipEl.offsetWidth, h = tooltipEl.offsetHeight;
+  const left = Math.max(4, Math.min(cssW - w - 4, hit.x - w / 2));
+  const top = hit.y - hit.r - h - 6 >= 4 ? hit.y - hit.r - h - 6 : hit.y + hit.r + 6;
+  tooltipEl.style.left = left + 'px';
+  tooltipEl.style.top = top + 'px';
+}
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  updateTooltip();
+});
+canvas.addEventListener('mouseleave', () => { mouse = null; updateTooltip(); });
+
+function updateLegend() {
+  document.getElementById('legendSun').hidden = !SHOW_SUN;
+  document.getElementById('legendMoon').hidden = !SHOW_MOON;
 }
 
 function drawCities(now, localOff) {

@@ -8,8 +8,8 @@ Chrome-Erweiterung (Manifest V3), die die Seite „Neuer Tab“ durch eine Weltk
 
 - **Weltkarte im neuen Tab**: Länderumrisse auf einer Karte von 84° N bis 60° S. Die Antarktis ist abgeschnitten.
 - **Tag/Nacht-Grenze**: Die Nachtseite wird abgedunkelt, mit weicher Dämmerung bis 12° unter dem Horizont.
-- **Sonne im Zenit (optional)**: Markiert den Punkt, an dem die Sonne gerade senkrecht steht (inklusive Zeitgleichung).
-- **Mond mit Mondphase (optional)**: Markiert den Punkt, an dem der Mond gerade im Zenit steht. Die Scheibe zeigt die aktuelle Phase, so wie sie von der Nordhalbkugel aus zu sehen ist (zunehmend = rechts hell).
+- **Sonne im Zenit (optional)**: Markiert den Punkt, an dem die Sonne gerade senkrecht steht (inklusive Zeitgleichung). Beim Überfahren mit der Maus erscheint ein Tooltip.
+- **Mond mit Mondphase (optional)**: Markiert den Punkt, an dem der Mond gerade im Zenit steht. Die Scheibe zeigt die aktuelle Phase, so wie sie von der Nordhalbkugel aus zu sehen ist (zunehmend = rechts hell). Beim Überfahren mit der Maus zeigt ein Tooltip den Namen der Phase (z. B. „Zunehmender Mond“) und den beleuchteten Anteil in Prozent.
 - **Städte mit Uhrzeit**: Jede ausgewählte Stadt bekommt ein Label mit Name und Ortszeit. Liegt die Stadt bereits an einem anderen Tag als du, steht zusätzlich der Wochentag dabei. Labels werden automatisch so platziert, dass sie sich möglichst nicht überlappen, bei Bedarf mit Hilfslinie.
 - **Aktuelles Wetter (optional)**: Neben der Uhrzeit jeder Stadt stehen die aktuelle Temperatur in °C und ein kleines Wettersymbol (klar, teils bewölkt, bewölkt, Nebel, Regen, Schnee, Gewitter; nachts mit Mond). Die Symbole übernehmen die Farben des aktiven Themes.
 - **Eigene Zeitzone hervorgehoben**: Städte in deiner Zeitzone und der passende Zeitzonen-Streifen sind orange markiert.

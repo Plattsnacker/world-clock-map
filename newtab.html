@@ -19,7 +19,8 @@
     <div class="legend">
       <span><i class="dot dot-city"></i>Stadt</span>
       <span><i class="dot dot-local"></i>Deine Zeitzone</span>
-      <span><i class="dot dot-sun"></i>Sonne im Zenit</span>
+      <span id="legendSun"><i class="dot dot-sun"></i>Sonne im Zenit</span>
+      <span id="legendMoon"><i class="dot dot-moon"></i>Mond im Zenit</span>
       <button id="settingsBtn" class="icon-btn" title="Einstellungen" aria-label="Einstellungen">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="3"/>
@@ -32,6 +33,7 @@
   <main id="mapWrap" class="map-wrap">
     <div id="mapBox" class="map-box">
       <canvas id="map" aria-label="Weltkarte mit aktuellen Uhrzeiten"></canvas>
+      <div id="mapTooltip" class="map-tooltip" role="tooltip" hidden></div>
       <div id="bands" class="bands" aria-label="Uhrzeit je UTC-Zeitzone"></div>
     </div>
   </main>
