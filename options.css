@@ -180,6 +180,7 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color:
   cursor: pointer;
   max-width: 640px;
 }
+.toggle + .toggle { margin-top: 8px; }
 .toggle input { width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
 .toggle-label { display: block; font-weight: 600; }
 .toggle-hint { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }

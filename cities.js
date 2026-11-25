@@ -145,7 +145,7 @@ const DEFAULT_IDS = [
   'perth', 'sydney', 'auckland',
 ];
 
-const DEFAULT_SETTINGS = { selected: DEFAULT_IDS, custom: [], showWeather: false };
+const DEFAULT_SETTINGS = { selected: DEFAULT_IDS, custom: [], showWeather: false, showSun: true, showMoon: true };
 
 // ---------- Speicher (chrome.storage.sync, Fallback localStorage für lokale Tests) ----------
 
@@ -163,11 +163,19 @@ async function loadSettings() {
     selected: Array.isArray(s.selected) ? s.selected : [...DEFAULT_IDS],
     custom: Array.isArray(s.custom) ? s.custom : [],
     showWeather: s.showWeather === true,
+    showSun: s.showSun !== false,
+    showMoon: s.showMoon !== false,
   };
 }
 
 async function saveSettings(settings) {
-  const data = { selected: settings.selected, custom: settings.custom, showWeather: !!settings.showWeather };
+  const data = {
+    selected: settings.selected,
+    custom: settings.custom,
+    showWeather: !!settings.showWeather,
+    showSun: settings.showSun !== false,
+    showMoon: settings.showMoon !== false,
+  };
   if (hasChromeStorage) await chrome.storage.sync.set(data);
   else localStorage.setItem(LS_KEY, JSON.stringify(data));
 }
@@ -175,7 +183,7 @@ async function saveSettings(settings) {
 function onSettingsChanged(callback) {
   if (hasChromeStorage) {
     chrome.storage.onChanged.addListener((changes, area) => {
-      if (area === 'sync' && (changes.selected || changes.custom || changes.showWeather)) loadSettings().then(callback);
+      if (area === 'sync' && (changes.selected || changes.custom || changes.showWeather || changes.showSun || changes.showMoon)) loadSettings().then(callback);
     });
   } else {
     window.addEventListener('storage', e => { if (e.key === LS_KEY) loadSettings().then(callback); });

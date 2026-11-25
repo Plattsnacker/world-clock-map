@@ -8,6 +8,8 @@ const LAT_RANGE = LAT_MAX - LAT_MIN;
 // Wird beim Start und bei Änderungen in den Einstellungen aus dem Speicher geladen (cities.js).
 let CITIES = resolveCities(DEFAULT_SETTINGS);
 let SHOW_WEATHER = DEFAULT_SETTINGS.showWeather;
+let SHOW_SUN = DEFAULT_SETTINGS.showSun;
+let SHOW_MOON = DEFAULT_SETTINGS.showMoon;
 let weather = new Map();   // weatherKey(city) -> { temp, code, day } (weather.js)
 let weatherLoadedAt = 0;
 
@@ -29,6 +31,10 @@ function canvasColors(t) {
     sun: t.sun,
     sunGlow: rgba(t.sun, 0.55),
     sunGlowEnd: rgba(t.sun, 0),
+    moonLit: '#f2f0e6',
+    moonDark: rgba(t.night, dark ? 0.85 : 0.55),
+    moonRim: dark ? 'rgba(242, 240, 230, 0.45)' : rgba(t.night, 0.45),
+    moonGlow: dark ? 'rgba(242, 240, 230, 0.08)' : rgba(t.night, 0.08),
     night: hexToRgb(t.night),
     nightAlpha: t.nightAlpha,
     leader: rgba(t.text, 0.45),
@@ -248,6 +254,64 @@ function sunPosition(d) {
   return { lat: decl, lon };
 }
 
+// ---------- Mondstand / Mondphase ----------
+
+// Vereinfachte Mondbahn (Hauptterme nach Meeus), genau auf etwa 1°.
+// Liefert den Bildpunkt (Mond im Zenit) sowie Beleuchtung und Phase.
+function moonPosition(d) {
+  const rad = Math.PI / 180;
+  const days = d.getTime() / 86400000 - 10957.5;        // Tage seit J2000.0
+  const L = (218.316 + 13.176396 * days) * rad;         // mittlere Länge
+  const M = (134.963 + 13.064993 * days) * rad;         // mittlere Anomalie
+  const F = (93.272 + 13.229350 * days) * rad;          // Argument der Breite
+  const l = L + 6.289 * rad * Math.sin(M);              // ekliptikale Länge
+  const b = 5.128 * rad * Math.sin(F);                  // ekliptikale Breite
+  const e = 23.4397 * rad;                              // Schiefe der Ekliptik
+
+  const ra = Math.atan2(Math.sin(l) * Math.cos(e) - Math.tan(b) * Math.sin(e), Math.cos(l));
+  const dec = Math.asin(Math.sin(b) * Math.cos(e) + Math.cos(b) * Math.sin(e) * Math.sin(l));
+  const gmst = (280.16 + 360.9856235 * days) * rad;     // Sternzeit Greenwich
+  let lon = (ra - gmst) / rad;
+  lon = ((lon % 360) + 540) % 360 - 180;
+
+  // Elongation Mond–Sonne bestimmt die Phase.
+  const Ms = (357.5291 + 0.98560028 * days) * rad;
+  const sunLon = Ms + (1.9148 * Math.sin(Ms) + 0.02 * Math.sin(2 * Ms)) * rad + 282.9372 * rad;
+  const elong = ((l - sunLon) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+
+  return {
+    lat: dec / rad,
+    lon,
+    illum: (1 - Math.cos(elong)) / 2,   // beleuchteter Anteil 0…1
+    waxing: elong < Math.PI,
+  };
+}
+
+// Mondscheibe mit Phase, wie von der Nordhalbkugel gesehen (zunehmend = rechts hell).
+function drawMoon(x, y, r, moon) {
+  ctx.fillStyle = COLORS.moonGlow;
+  ctx.beginPath(); ctx.arc(x, y, r * 2.4, 0, Math.PI * 2); ctx.fill();
+
+  ctx.fillStyle = COLORS.moonDark;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+
+  // Heller Rand von oben nach unten, dann Terminator (Halbellipse) zurück nach oben.
+  const k = moon.illum;
+  const s = moon.waxing ? 1 : -1;                  // Seite des hellen Randes
+  const t = k < 0.5 ? s : -s;                      // Seite, zu der sich der Terminator wölbt
+  const rx = r * Math.abs(1 - 2 * k);
+  ctx.fillStyle = COLORS.moonLit;
+  ctx.beginPath();
+  ctx.arc(x, y, r, -Math.PI / 2, Math.PI / 2, s < 0);
+  if (t > 0) ctx.ellipse(x, y, rx, r, 0, Math.PI / 2, -Math.PI / 2, true);
+  else ctx.ellipse(x, y, rx, r, 0, Math.PI / 2, Math.PI * 1.5, false);
+  ctx.fill();
+
+  ctx.strokeStyle = COLORS.moonRim;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+}
+
 const NIGHT_W = 720;
 const NIGHT_H = Math.round(NIGHT_W * LAT_RANGE / 360);
 const nightLayer = document.createElement('canvas');
@@ -302,8 +366,14 @@ function render(now) {
   ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(nightLayer, 0, 0, cssW, cssH);
 
+  // Mond
+  if (SHOW_MOON) {
+    const moon = moonPosition(now);
+    if (moon.lat <= LAT_MAX && moon.lat >= LAT_MIN) drawMoon(projX(moon.lon), projY(moon.lat), 7, moon);
+  }
+
   // Sonne
-  if (sun.lat <= LAT_MAX && sun.lat >= LAT_MIN) {
+  if (SHOW_SUN && sun.lat <= LAT_MAX && sun.lat >= LAT_MIN) {
     const sx = projX(sun.lon), sy = projY(sun.lat);
     const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, 22);
     g.addColorStop(0, COLORS.sunGlow);
@@ -499,6 +569,8 @@ function tick() {
   rings = map;
   CITIES = resolveCities(settings);
   SHOW_WEATHER = settings.showWeather;
+  SHOW_SUN = settings.showSun;
+  SHOW_MOON = settings.showMoon;
   setTheme(themeState);
   resize();
   refreshWeather();
@@ -508,6 +580,8 @@ function tick() {
   onSettingsChanged(s => {
     CITIES = resolveCities(s);
     SHOW_WEATHER = s.showWeather;
+    SHOW_SUN = s.showSun;
+    SHOW_MOON = s.showMoon;
     render(new Date());
     refreshWeather();   // holt nur fehlende/veraltete Städte nach (Cache)
   });
