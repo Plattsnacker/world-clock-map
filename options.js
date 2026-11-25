@@ -378,6 +378,14 @@ function renderEditor() {
   renderEditor();
 
   settings = await loadSettings();
+
+  const weatherCb = document.getElementById('showWeather');
+  weatherCb.checked = settings.showWeather;
+  weatherCb.addEventListener('change', () => {
+    settings.showWeather = weatherCb.checked;
+    persist();
+  });
+
   fillTimeZoneList();
   renderAll();
 

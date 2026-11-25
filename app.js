@@ -7,6 +7,9 @@ const LAT_RANGE = LAT_MAX - LAT_MIN;
 
 // Wird beim Start und bei Änderungen in den Einstellungen aus dem Speicher geladen (cities.js).
 let CITIES = resolveCities(DEFAULT_SETTINGS);
+let SHOW_WEATHER = DEFAULT_SETTINGS.showWeather;
+let weather = new Map();   // weatherKey(city) -> { temp, code, day } (weather.js)
+let weatherLoadedAt = 0;
 
 // Canvas-Farben, abgeleitet aus dem aktiven Theme (themes.js).
 let COLORS = canvasColors(resolveTheme(DEFAULT_THEME_STATE));
@@ -33,8 +36,30 @@ function canvasColors(t) {
     labelName: mixHex(t.muted, t.text, 0.3),
     labelTime: t.text,
     dotStroke: dark ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.85)',
+    weather: {
+      sun: t.sun,
+      moon: mixHex(t.muted, t.text, 0.6),
+      cloud: mixHex(t.muted, t.text, dark ? 0.35 : 0.1),
+      rain: t.accent,
+      bolt: t.local,
+    },
+    labelTemp: mixHex(t.muted, t.text, 0.55),
   };
 }
+
+// ---------- Wetter ----------
+
+async function refreshWeather() {
+  if (!SHOW_WEATHER || !CITIES.length) return;
+  weatherLoadedAt = Date.now();
+  weather = await fetchWeather(CITIES);
+  render(new Date());
+}
+
+const formatTemp = t => {
+  const r = Math.round(t);
+  return `${r < 0 ? '−' : ''}${Math.abs(r)} °C`;
+};
 
 function setTheme(state) {
   const theme = resolveTheme(state);
@@ -315,15 +340,26 @@ function drawCities(now, localOff) {
     const isLocal = c.tz === LOCAL_TZ || currentOffsetHours(c.tz, now) === localOff;
     const day = dayKeyIn(c.tz, now);
     const name = day !== localDay ? `${c.name} · ${weekdayIn(c.tz, now)}` : c.name;
-    return { c, x, y, isLocal, name, time: timeIn(c.tz, now) };
+    const wx = SHOW_WEATHER ? weather.get(weatherKey(c)) : null;
+    return { c, x, y, isLocal, name, time: timeIn(c.tz, now), wx };
   });
+
+  const iconSize = Math.round(timeSize * 1.15);
+  const tempSize = Math.round(12 * scale);
+  const tempFont = `${tempSize}px "Segoe UI", system-ui, sans-serif`;
 
   for (const it of items) {
     ctx.font = `${nameSize}px "Segoe UI", system-ui, sans-serif`;
     const wName = ctx.measureText(it.name).width;
     ctx.font = `600 ${timeSize}px "Segoe UI", system-ui, sans-serif`;
     const wTime = ctx.measureText(it.time).width;
-    const w = Math.max(wName, wTime) + padX * 2;
+    let wWeather = 0;
+    if (it.wx) {
+      it.temp = formatTemp(it.wx.temp);
+      ctx.font = tempFont;
+      wWeather = 8 + iconSize + 3 + ctx.measureText(it.temp).width;
+    }
+    const w = Math.max(wName, wTime + wWeather) + padX * 2;
     const h = nameSize + timeSize + gap + padY * 2;
 
     const { x, y } = it;
@@ -379,7 +415,19 @@ function drawCities(now, localOff) {
     ctx.fillText(it.name, box.x + padX, box.y + padY);
     ctx.font = `600 ${timeSize}px "Segoe UI", system-ui, sans-serif`;
     ctx.fillStyle = it.isLocal ? COLORS.local : COLORS.labelTime;
-    ctx.fillText(it.time, box.x + padX, box.y + padY + nameSize + gap);
+    const rowY = box.y + padY + nameSize + gap;
+    ctx.fillText(it.time, box.x + padX, rowY);
+
+    if (it.wx) {
+      const ix = box.x + padX + wTime + 8;
+      const iy = rowY + (timeSize - iconSize) / 2 + 1;
+      drawWeatherIcon(ctx, weatherKind(it.wx.code), it.wx.day, ix, iy, iconSize, COLORS.weather);
+      ctx.font = tempFont;
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = COLORS.labelTemp;
+      ctx.fillText(it.temp, ix + iconSize + 3, rowY + timeSize / 2 + 1);
+      ctx.textBaseline = 'top';
+    }
 
     // Punkt
     ctx.fillStyle = accent;
@@ -441,6 +489,7 @@ function tick() {
   if (minute !== lastMinute) {
     lastMinute = minute;
     render(now);
+    if (SHOW_WEATHER && now.getTime() - weatherLoadedAt > WEATHER_TTL) refreshWeather();
   }
 }
 
@@ -449,14 +498,18 @@ function tick() {
   const [map, settings, themeState] = await Promise.all([loadMap(), loadSettings(), loadThemeState()]);
   rings = map;
   CITIES = resolveCities(settings);
+  SHOW_WEATHER = settings.showWeather;
   setTheme(themeState);
   resize();
+  refreshWeather();
 
   onThemeChanged(setTheme);
 
   onSettingsChanged(s => {
     CITIES = resolveCities(s);
+    SHOW_WEATHER = s.showWeather;
     render(new Date());
+    refreshWeather();   // holt nur fehlende/veraltete Städte nach (Cache)
   });
 
   // openOptionsPage schlägt fehl, wenn Chrome noch ein Manifest ohne options_ui
