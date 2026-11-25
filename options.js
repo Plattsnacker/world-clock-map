@@ -379,12 +379,14 @@ function renderEditor() {
 
   settings = await loadSettings();
 
-  const weatherCb = document.getElementById('showWeather');
-  weatherCb.checked = settings.showWeather;
-  weatherCb.addEventListener('change', () => {
-    settings.showWeather = weatherCb.checked;
-    persist();
-  });
+  for (const key of ['showSun', 'showMoon', 'showWeather']) {
+    const cb = document.getElementById(key);
+    cb.checked = settings[key];
+    cb.addEventListener('change', () => {
+      settings[key] = cb.checked;
+      persist();
+    });
+  }
 
   fillTimeZoneList();
   renderAll();
