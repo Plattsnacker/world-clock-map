@@ -30,12 +30,16 @@ function el(tag, props = {}, children = []) {
 }
 
 let statusTimer;
-async function persist() {
-  await saveSettings(settings);
+function showSaved() {
   statusEl.textContent = 'Gespeichert ✓';
   statusEl.classList.add('show');
   clearTimeout(statusTimer);
   statusTimer = setTimeout(() => statusEl.classList.remove('show'), 1500);
+}
+
+async function persist() {
+  await saveSettings(settings);
+  showSaved();
 }
 
 function isSelected(id) { return settings.selected.includes(id); }
@@ -212,9 +216,167 @@ function renderAll() {
   updateCounts();
 }
 
+// ---------- Farbschema ----------
+
+let themeState = { ...DEFAULT_THEME_STATE };
+const themeListEl = document.getElementById('themeList');
+const themeEditorEl = document.getElementById('themeEditor');
+const editorFieldsEl = document.getElementById('editorFields');
+const copyFromEl = document.getElementById('copyFrom');
+const colorInputs = new Map(); // key -> { picker, hex }
+let nightInput, nightValue;
+
+// Mini-Karte als Vorschau eines Themes.
+function themePreview(c) {
+  const p = el('div', { className: 'preview' });
+  const vars = {
+    '--p-bg': c.bg, '--p-o1': c.oceanTop, '--p-o2': c.oceanBottom, '--p-land': c.land,
+    '--p-border': c.border, '--p-night': rgba(c.night, c.nightAlpha), '--p-acc': c.accent,
+    '--p-loc': c.local, '--p-sun': c.sun, '--p-label': c.label, '--p-text': c.text,
+  };
+  for (const [k, v] of Object.entries(vars)) p.style.setProperty(k, v);
+  p.innerHTML = '<div class="p-map"><i class="p-land l1"></i><i class="p-land l2"></i><i class="p-land l3"></i>'
+    + '<i class="p-night"></i><i class="p-dot d1"></i><i class="p-dot d2"></i><i class="p-dot p-sun"></i>'
+    + '<i class="p-label"></i></div>';
+  return p;
+}
+
+function renderThemeList() {
+  themeListEl.textContent = '';
+  const custom = {
+    id: CUSTOM_THEME_ID,
+    name: 'Eigenes Theme',
+    colors: themeState.customTheme || resolveTheme(themeState),
+  };
+  for (const t of [...THEMES, custom]) {
+    const on = themeState.theme === t.id;
+    const card = el('button', { type: 'button', className: 'theme-card' + (on ? ' on' : '') }, [
+      themePreview(t.colors),
+      el('span', { className: 'theme-name', textContent: t.name }),
+    ]);
+    if (t.id === CUSTOM_THEME_ID) {
+      card.classList.add('custom');
+      card.querySelector('.theme-name').append(el('span', { className: 'badge', textContent: 'anpassbar' }));
+    }
+    card.dataset.id = t.id;
+    card.setAttribute('role', 'radio');
+    card.setAttribute('aria-checked', String(on));
+    card.addEventListener('click', () => selectTheme(t.id));
+    themeListEl.append(card);
+  }
+}
+
+function selectTheme(id) {
+  // Beim ersten Öffnen startet das eigene Theme mit den Farben des aktuell gewählten.
+  if (id === CUSTOM_THEME_ID && !themeState.customTheme) themeState.customTheme = resolveTheme(themeState);
+  themeState.theme = id;
+  applyThemeCss(resolveTheme(themeState));
+  renderThemeList();
+  renderEditor();
+  persistTheme();
+}
+
+let themeSaveTimer;
+function persistTheme() {
+  // Entprellt, damit Farbwähler-Ziehen nicht das Schreiblimit von storage.sync sprengt.
+  clearTimeout(themeSaveTimer);
+  themeSaveTimer = setTimeout(async () => {
+    await saveThemeState(themeState);
+    showSaved();
+  }, 350);
+}
+
+function setCustomValue(key, value) {
+  themeState.customTheme = { ...themeState.customTheme, [key]: value };
+  customThemeChanged();
+}
+
+function customThemeChanged() {
+  applyThemeCss(resolveTheme(themeState));
+  syncEditor();
+  const card = themeListEl.querySelector(`[data-id="${CUSTOM_THEME_ID}"]`);
+  if (card) card.querySelector('.preview').replaceWith(themePreview(themeState.customTheme));
+  persistTheme();
+}
+
+function buildEditor() {
+  copyFromEl.append(
+    el('option', { value: '', textContent: '– Theme wählen –' }),
+    ...THEMES.map(t => el('option', { value: t.id, textContent: t.name })),
+  );
+  copyFromEl.addEventListener('change', () => {
+    if (!copyFromEl.value) return;
+    themeState.customTheme = { ...presetById(copyFromEl.value).colors };
+    copyFromEl.value = '';
+    customThemeChanged();
+  });
+
+  let group = null, groupEl = null;
+  for (const f of THEME_FIELDS) {
+    if (f.group !== group) {
+      group = f.group;
+      groupEl = el('fieldset', { className: 'field-group' }, [el('legend', { textContent: group })]);
+      editorFieldsEl.append(groupEl);
+    }
+    const picker = el('input', { type: 'color' });
+    picker.setAttribute('aria-label', f.label);
+    picker.addEventListener('input', () => setCustomValue(f.key, picker.value));
+
+    const hex = el('input', { type: 'text', className: 'hex', maxLength: 7, spellcheck: false });
+    hex.setAttribute('aria-label', `${f.label} (Hex-Wert)`);
+    hex.addEventListener('change', () => {
+      let v = hex.value.trim().toLowerCase();
+      if (!v.startsWith('#')) v = '#' + v;
+      if (HEX_RE.test(v)) setCustomValue(f.key, v);
+      else hex.value = themeState.customTheme[f.key];
+    });
+
+    groupEl.append(el('div', { className: 'field' }, [
+      el('label', { className: 'swatch' }, [picker]),
+      el('span', { className: 'field-label', textContent: f.label }),
+      hex,
+    ]));
+    colorInputs.set(f.key, { picker, hex });
+
+    if (f.key === 'night') {
+      nightInput = el('input', { type: 'range', min: 0, max: 95, step: 5 });
+      nightInput.setAttribute('aria-label', 'Nachtintensität');
+      nightValue = el('span', { className: 'range-value' });
+      nightInput.addEventListener('input', () => setCustomValue('nightAlpha', nightInput.value / 100));
+      groupEl.append(el('div', { className: 'field range' }, [
+        el('span', { className: 'field-label', textContent: 'Nachtintensität' }),
+        nightInput,
+        nightValue,
+      ]));
+    }
+  }
+}
+
+function syncEditor() {
+  const c = themeState.customTheme;
+  if (!c) return;
+  for (const [key, { picker, hex }] of colorInputs) {
+    picker.value = c[key];
+    if (document.activeElement !== hex) hex.value = c[key];
+  }
+  nightInput.value = Math.round(c.nightAlpha * 100);
+  nightValue.textContent = `${nightInput.value} %`;
+}
+
+function renderEditor() {
+  themeEditorEl.hidden = themeState.theme !== CUSTOM_THEME_ID;
+  syncEditor();
+}
+
 // ---------- Start ----------
 
 (async function init() {
+  themeState = await loadThemeState();
+  applyThemeCss(resolveTheme(themeState));
+  buildEditor();
+  renderThemeList();
+  renderEditor();
+
   settings = await loadSettings();
   fillTimeZoneList();
   renderAll();
