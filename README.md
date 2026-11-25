@@ -2,6 +2,8 @@
 
 Chrome-Erweiterung (Manifest V3), die die Seite „Neuer Tab“ durch eine Weltkarte ersetzt. Die Karte zeigt die Tag-/Nacht-Grenze, den Sonnenstand und die aktuellen Uhrzeiten ausgewählter Städte und aller UTC-Zeitzonen.
 
+![Neuer Tab mit Weltkarte, Tag/Nacht-Grenze und Städte-Uhrzeiten](docs/screenshot_1.png)
+
 ## Funktionen
 
 - **Weltkarte im neuen Tab**: Länderumrisse auf einer Karte von 84° N bis 60° S. Die Antarktis ist abgeschnitten.
@@ -59,6 +61,7 @@ weltkarte/
 ├── options.css                Styles für die Einstellungsseite
 ├── cities.js                  Gemeinsam genutzt: Städtekatalog, Standardauswahl, Speicherzugriff
 ├── data/countries-110m.json   Länderumrisse als TopoJSON (Maßstab 1:110 Mio.)
+├── docs/                      Screenshots für die README
 └── icons/                     Icons in 16, 48 und 128 px
 ```
 
