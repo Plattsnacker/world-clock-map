@@ -140,7 +140,7 @@ Der Region-Index verweist auf das Array `REGIONS`, der Ländercode (ISO 3166-1 a
 
 ## Version
 
-1.7.0
+1.10.0
 
 ## Lizenz
 
