@@ -123,13 +123,14 @@ body {
 }
 
 .bands {
-  display: grid;
-  grid-template-columns: 0.5fr repeat(23, 1fr) 0.5fr;
+  display: flex;
   margin-top: 8px;
   font-variant-numeric: tabular-nums;
 }
 
 .band {
+  flex: 0 0 0;
+  min-width: 0;
   text-align: center;
   padding: 4px 0;
   border-radius: 6px;
@@ -147,8 +148,8 @@ body {
 .band.local .time { color: var(--local); }
 
 .band.edge { overflow: visible; }
-.band.edge:first-child { text-align: left; }
-.band.edge:last-child  { text-align: right; }
+.band.start { text-align: left; }
+.band.end   { text-align: right; }
 .band.edge .off { font-size: 9px; }
 .band.edge .time { font-size: 10px; }
 
