@@ -16,7 +16,7 @@ Browser-Erweiterung (Manifest V3) für Chrome und Firefox, die die Seite „Neue
 - **Zeitzonenleiste**: Unter der Karte steht für jede Zone von UTC−12 bis UTC+12 die aktuelle Uhrzeit.
 - **Kopfzeile**: Lokale Uhrzeit mit Sekunden, Datum, Zeitzonenname und UTC-Versatz.
 - **Einstellungsseite**:
-  - Sechs Farb-Themes (Nacht, Hell, Atlas, Ozean, Abendrot, Terminal) mit Vorschau
+  - Zwölf Farb-Themes (Nacht, Hell, Atlas, Ozean, Abendrot, Terminal, Herbst, Hochkontrast, Rosé, Neon, Golden, Wiese) mit Vorschau
   - Eigenes Theme: alle Karten- und Oberflächenfarben sowie die Nachtintensität frei einstellbar
   - Auswahl aus 101 Städten, gruppiert nach Regionen (Nordamerika, Mittel- & Südamerika, Europa, Afrika, Asien, Ozeanien)
   - Sonne, Mond und Wetteranzeige einzeln ein- und ausschalten (Sonne und Mond sind standardmäßig an)

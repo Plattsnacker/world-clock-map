@@ -74,6 +74,60 @@ const THEMES = [
       night: '#000000', nightAlpha: 0.6,
     },
   },
+  {
+    id: 'herbst', name: 'Herbst',
+    colors: {
+      bg: '#1c120b', text: '#f5e6d3', muted: '#a88f74', label: '#140c07',
+      accent: '#ff8c3a', local: '#e0574a', sun: '#ffd25e',
+      oceanTop: '#22302d', oceanBottom: '#161f1d', land: '#5a3a1e', border: '#c28a4f',
+      night: '#0a0603', nightAlpha: 0.65,
+    },
+  },
+  {
+    id: 'kontrast', name: 'Hochkontrast',
+    colors: {
+      bg: '#000000', text: '#ffffff', muted: '#d6d6d6', label: '#000000',
+      accent: '#ffff00', local: '#00ffff', sun: '#ffb000',
+      oceanTop: '#001a40', oceanBottom: '#000c24', land: '#3a3a3a', border: '#ffffff',
+      night: '#000000', nightAlpha: 0.5,
+    },
+  },
+  {
+    id: 'rose', name: 'Rosé',
+    colors: {
+      bg: '#fbeef1', text: '#4a2233', muted: '#8f6474', label: '#fffafb',
+      accent: '#d6336c', local: '#9b4dca', sun: '#f0a020',
+      oceanTop: '#f6d3dd', oceanBottom: '#eebfcd', land: '#fffaf8', border: '#c88aa0',
+      night: '#4a1a33', nightAlpha: 0.3,
+    },
+  },
+  {
+    id: 'neon', name: 'Neon',
+    colors: {
+      bg: '#0b0614', text: '#f2eaff', muted: '#9a88c0', label: '#07030e',
+      accent: '#ff2bd6', local: '#00f0ff', sun: '#faff00',
+      oceanTop: '#120a2a', oceanBottom: '#0a0518', land: '#1d1240', border: '#b026ff',
+      night: '#000000', nightAlpha: 0.6,
+    },
+  },
+  {
+    id: 'gold', name: 'Golden',
+    colors: {
+      bg: '#14110a', text: '#f7ecd2', muted: '#a8996f', label: '#0e0b06',
+      accent: '#e6b84a', local: '#ff9f5a', sun: '#fff3b0',
+      oceanTop: '#1b1810', oceanBottom: '#110f09', land: '#3d3220', border: '#d4af37',
+      night: '#050402', nightAlpha: 0.65,
+    },
+  },
+  {
+    id: 'wiese', name: 'Wiese',
+    colors: {
+      bg: '#eef5e6', text: '#1f3320', muted: '#5e7558', label: '#fbfdf7',
+      accent: '#2a7d34', local: '#d2462f', sun: '#f2b705',
+      oceanTop: '#cfe6ea', oceanBottom: '#b5d6dc', land: '#a8d08d', border: '#5c8a4a',
+      night: '#1b2f1f', nightAlpha: 0.35,
+    },
+  },
 ];
 
 const DEFAULT_THEME_ID = 'nacht';
