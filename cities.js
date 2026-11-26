@@ -171,7 +171,30 @@ const DEFAULT_IDS = [
   'perth', 'sydney', 'auckland',
 ];
 
-const DEFAULT_SETTINGS = { selected: DEFAULT_IDS, custom: [], showWeather: false, showSun: true, showMoon: true, showFlags: false, centerNoon: false, showIss: false };
+const DEFAULT_SETTINGS = {
+  selected: DEFAULT_IDS, custom: [], showWeather: false, showSun: true, showMoon: true, showFlags: false,
+  centerNoon: false, showIss: false, tempUnit: 'c', clock: '24',
+};
+
+// ---------- Einheiten ----------
+
+// Zerlegt eine Uhrzeit "HH:MM" (24 h) je nach Format in Zeit und Tageshälfte,
+// z. B. "23:05" → { time: "11:05", period: "PM" } bei 12-Stunden-Anzeige.
+function splitClock(hhmm, clock) {
+  if (clock !== '12') return { time: hhmm, period: '' };
+  const [h, m] = hhmm.split(':');
+  return { time: `${+h % 12 || 12}:${m}`, period: +h < 12 ? 'AM' : 'PM' };
+}
+function formatClock(hhmm, clock) {
+  const { time, period } = splitClock(hhmm, clock);
+  return period ? `${time} ${period}` : time;
+}
+
+// Temperatur in °C, ausgegeben in der gewählten Einheit ('c' oder 'f').
+function formatTemp(celsius, unit) {
+  const r = Math.round(unit === 'f' ? celsius * 9 / 5 + 32 : celsius);
+  return `${r < 0 ? '−' : ''}${Math.abs(r)} ${unit === 'f' ? '°F' : '°C'}`;
+}
 
 // ---------- Speicher (chrome.storage.sync, Fallback localStorage für lokale Tests) ----------
 
@@ -194,6 +217,8 @@ async function loadSettings() {
     showFlags: s.showFlags === true,
     centerNoon: s.centerNoon === true,
     showIss: s.showIss === true,
+    tempUnit: s.tempUnit === 'f' ? 'f' : 'c',
+    clock: s.clock === '12' ? '12' : '24',
   };
 }
 
@@ -207,6 +232,8 @@ async function saveSettings(settings) {
     showFlags: !!settings.showFlags,
     centerNoon: !!settings.centerNoon,
     showIss: !!settings.showIss,
+    tempUnit: settings.tempUnit === 'f' ? 'f' : 'c',
+    clock: settings.clock === '12' ? '12' : '24',
   };
   if (hasChromeStorage) await chrome.storage.sync.set(data);
   else localStorage.setItem(LS_KEY, JSON.stringify(data));
@@ -215,7 +242,7 @@ async function saveSettings(settings) {
 function onSettingsChanged(callback) {
   if (hasChromeStorage) {
     chrome.storage.onChanged.addListener((changes, area) => {
-      if (area === 'sync' && (changes.selected || changes.custom || changes.showWeather || changes.showSun || changes.showMoon || changes.showFlags || changes.centerNoon || changes.showIss)) loadSettings().then(callback);
+      if (area === 'sync' && Object.keys(DEFAULT_SETTINGS).some(k => k in changes)) loadSettings().then(callback);
     });
   } else {
     window.addEventListener('storage', e => { if (e.key === LS_KEY) loadSettings().then(callback); });

@@ -186,6 +186,30 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color:
 .toggle-label { display: block; font-weight: 600; }
 .toggle-hint { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
 .toggle-hint a { color: var(--accent); }
+
+/* Auswahl zwischen zwei Werten (Uhrzeitformat, Temperatureinheit) */
+.toggle.choice { align-items: center; justify-content: space-between; cursor: default; }
+.segmented {
+  display: inline-flex;
+  flex: none;
+  padding: 2px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.segmented label { position: relative; cursor: pointer; }
+.segmented input { position: absolute; opacity: 0; pointer-events: none; }
+.segmented label span {
+  display: block;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.segmented label:hover span { color: var(--text); }
+.segmented input:checked + span { background: var(--accent); color: var(--on-accent, var(--bg)); font-weight: 600; }
+.segmented input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 1px; }
 .empty-search { color: var(--muted); margin-top: 28px; }
 
 .custom { border-top: 1px solid var(--line); padding-top: 24px; margin-top: 40px; }
