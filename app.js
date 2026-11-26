@@ -13,6 +13,8 @@ let SHOW_MOON = DEFAULT_SETTINGS.showMoon;
 let SHOW_FLAGS = DEFAULT_SETTINGS.showFlags;
 let CENTER_NOON = DEFAULT_SETTINGS.centerNoon;
 let SHOW_ISS = DEFAULT_SETTINGS.showIss;
+let TEMP_UNIT = DEFAULT_SETTINGS.tempUnit;
+let CLOCK = DEFAULT_SETTINGS.clock;
 let weather = new Map();   // weatherKey(city) -> { temp, code, day } (weather.js)
 let weatherLoadedAt = 0;
 
@@ -168,11 +170,6 @@ function flagImage(code) {
   return img.complete && img.naturalWidth ? img : null;
 }
 
-const formatTemp = t => {
-  const r = Math.round(t);
-  return `${r < 0 ? '−' : ''}${Math.abs(r)} °C`;
-};
-
 const formatDeg = (v, digits) => Math.abs(v).toFixed(digits).replace('.', ',') + '°';
 const formatLatLon = (lat, lon, digits) =>
   `${formatDeg(lat, digits)} ${lat >= 0 ? 'N' : 'S'}, ${formatDeg(lon, digits)} ${lon >= 0 ? 'O' : 'W'}`;
@@ -219,8 +216,8 @@ function formatter(key, opts) {
   if (!fmtCache.has(key)) fmtCache.set(key, new Intl.DateTimeFormat('de-DE', opts));
   return fmtCache.get(key);
 }
-const timeIn = (tz, d) =>
-  formatter('t' + tz, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: tz }).format(d);
+const timeIn = (tz, d) => formatClock(
+  formatter('t' + tz, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: tz }).format(d), CLOCK);
 const weekdayIn = (tz, d) =>
   formatter('w' + tz, { weekday: 'short', timeZone: tz }).format(d).replace('.', '');
 const dayKeyIn = (tz, d) =>
@@ -661,7 +658,7 @@ function drawCities(now, localOff) {
     const wTime = ctx.measureText(it.time).width;
     let wWeather = 0;
     if (it.wx) {
-      it.temp = formatTemp(it.wx.temp);
+      it.temp = formatTemp(it.wx.temp, TEMP_UNIT);
       ctx.font = tempFont;
       wWeather = 8 + iconSize + 3 + ctx.measureText(it.temp).width;
     }
@@ -791,9 +788,10 @@ function renderBands(now, localOff) {
     let body = '';
     if (w >= bandW * 0.45) {
       const t = new Date(now.getTime() + o * 3600000);
-      const time = formatter('utc', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'UTC' }).format(t);
+      const { time, period } = splitClock(
+        formatter('utc', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'UTC' }).format(t), CLOCK);
       const label = Math.abs(o) === 12 ? (o > 0 ? '+12' : '−12') : offsetLabel(o).replace('UTC', '') || 'UTC';
-      body = `<div class="off">${label}</div><div class="time">${time}</div>`;
+      body = `<div class="off">${label}</div><div class="time">${time}${period ? `<span class="ampm">${period}</span>` : ''}</div>`;
     }
     return `<div class="${cls.join(' ')}" style="flex-grow:${w.toFixed(3)}" title="${offsetLabel(o)}">${body}</div>`;
   });
@@ -810,7 +808,8 @@ function updateHeader(now) {
   const hh = String(now.getHours()).padStart(2, '0');
   const mm = String(now.getMinutes()).padStart(2, '0');
   const ss = String(now.getSeconds()).padStart(2, '0');
-  elTime.innerHTML = `${hh}:${mm}<span class="sec">:${ss}</span>`;
+  const { time, period } = splitClock(`${hh}:${mm}`, CLOCK);
+  elTime.innerHTML = `${time}<span class="sec">:${ss}</span>${period ? `<span class="ampm">${period}</span>` : ''}`;
   elDate.textContent = now.toLocaleDateString('de-DE', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
@@ -844,6 +843,8 @@ function tick() {
   SHOW_FLAGS = settings.showFlags;
   CENTER_NOON = settings.centerNoon;
   SHOW_ISS = settings.showIss;
+  TEMP_UNIT = settings.tempUnit;
+  CLOCK = settings.clock;
   setTheme(themeState);
   resize();
   refreshWeather();
@@ -859,6 +860,9 @@ function tick() {
     SHOW_FLAGS = s.showFlags;
     CENTER_NOON = s.centerNoon;
     SHOW_ISS = s.showIss;
+    TEMP_UNIT = s.tempUnit;
+    CLOCK = s.clock;
+    updateHeader(new Date());
     render(new Date());
     refreshWeather();   // holt nur fehlende/veraltete Städte nach (Cache)
     if (SHOW_ISS && !issElements) refreshIss();

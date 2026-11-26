@@ -73,9 +73,29 @@
         <input id="showWeather" type="checkbox">
         <span>
           <span class="toggle-label">Aktuelles Wetter anzeigen</span>
-          <span class="toggle-hint">Zeigt zu jeder Stadt die Temperatur in °C und ein Wettersymbol. Daten von <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a>, alle 15 Minuten aktualisiert.</span>
+          <span class="toggle-hint">Zeigt zu jeder Stadt die Temperatur und ein Wettersymbol. Daten von <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a>, alle 15 Minuten aktualisiert.</span>
         </span>
       </label>
+      <div class="toggle choice">
+        <span>
+          <span class="toggle-label" id="clockLabel">Uhrzeitformat</span>
+          <span class="toggle-hint">Gilt für die Uhr oben, die Städte, die Zeitzonenleiste und die Sonnenzeiten im Tooltip.</span>
+        </span>
+        <span class="segmented" role="radiogroup" aria-labelledby="clockLabel">
+          <label><input type="radio" name="clock" value="24"><span>24 h</span></label>
+          <label><input type="radio" name="clock" value="12"><span>12 h (AM/PM)</span></label>
+        </span>
+      </div>
+      <div class="toggle choice">
+        <span>
+          <span class="toggle-label" id="tempUnitLabel">Temperatureinheit</span>
+          <span class="toggle-hint">Einheit für die Wetteranzeige.</span>
+        </span>
+        <span class="segmented" role="radiogroup" aria-labelledby="tempUnitLabel">
+          <label><input type="radio" name="tempUnit" value="c"><span>°C</span></label>
+          <label><input type="radio" name="tempUnit" value="f"><span>°F</span></label>
+        </span>
+      </div>
     </section>
 
     <h2 class="section-title cities-title">Städte</h2>

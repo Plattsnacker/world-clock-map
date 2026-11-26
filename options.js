@@ -19,7 +19,7 @@ function timeIn(tz) {
   if (!timeFmt.has(tz)) {
     timeFmt.set(tz, new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: tz }));
   }
-  return timeFmt.get(tz).format(new Date());
+  return formatClock(timeFmt.get(tz).format(new Date()), settings.clock);
 }
 
 function el(tag, props = {}, children = []) {
@@ -404,11 +404,25 @@ function renderEditor() {
     });
   }
 
+  const updateTimes = () => {
+    for (const [e, tz] of timeEls) if (e.isConnected) e.textContent = timeIn(tz);
+  };
+
+  for (const key of ['clock', 'tempUnit']) {
+    for (const radio of document.querySelectorAll(`input[name="${key}"]`)) {
+      radio.checked = radio.value === settings[key];
+      radio.addEventListener('change', () => {
+        if (!radio.checked) return;
+        settings[key] = radio.value;
+        if (key === 'clock') updateTimes();
+        persist();
+      });
+    }
+  }
+
   fillTimeZoneList();
   fillCountryList();
   renderAll();
 
-  setInterval(() => {
-    for (const [e, tz] of timeEls) if (e.isConnected) e.textContent = timeIn(tz);
-  }, 15000);
+  setInterval(updateTimes, 15000);
 })();

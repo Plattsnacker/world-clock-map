@@ -140,6 +140,16 @@ body {
 
 .band .off  { font-size: 10px; color: var(--muted); }
 .band .time { font-size: 12px; font-weight: 600; }
+.band .ampm { font-size: 8px; font-weight: 400; margin-left: 1px; }
+
+/* AM/PM bei 12-Stunden-Anzeige */
+.clock-time .ampm {
+  font-size: 0.3em;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 6px;
+  letter-spacing: 0;
+}
 
 .band.local {
   background: color-mix(in srgb, var(--local) 15%, transparent);
