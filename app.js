@@ -17,6 +17,7 @@ let TEMP_UNIT = DEFAULT_SETTINGS.tempUnit;
 let CLOCK = DEFAULT_SETTINGS.clock;
 let SHOW_QUAKES = DEFAULT_SETTINGS.showQuakes;
 let QUAKE_MIN_MAG = DEFAULT_SETTINGS.quakeMinMag;
+let SHOW_AURORA = DEFAULT_SETTINGS.showAurora;
 let weather = new Map();   // weatherKey(city) -> { temp, code, day } (weather.js)
 let weatherLoadedAt = 0;
 
@@ -216,6 +217,80 @@ function renderQuakes(now) {
   }
 }
 
+// ---------- Polarlicht ----------
+
+let aurora = null;        // { grid, forecast } (aurora.js), null solange keine Daten vorliegen
+let auroraLoadedAt = 0;
+const AURORA_ROWS = LAT_MAX - LAT_MIN + 1;   // Rasterzeilen im sichtbaren Ausschnitt (84° N … 60° S)
+const auroraLayer = document.createElement('canvas');
+auroraLayer.width = AURORA_W;
+auroraLayer.height = AURORA_ROWS;
+
+async function refreshAurora() {
+  if (!SHOW_AURORA) return;
+  auroraLoadedAt = Date.now();
+  aurora = await fetchAurora();
+  // Ohne Daten (z. B. offline) nach 2 Minuten erneut versuchen.
+  if (!aurora) auroraLoadedAt = Date.now() - AURORA_TTL + 2 * 60 * 1000;
+  buildAuroraLayer();
+  render(new Date());
+}
+
+// Farbe nach Wahrscheinlichkeit: Grün, ab 30 % über Gelb nach Rot (wie bei NOAA).
+const AURORA_STOPS = [[0, [60, 255, 122]], [30, [60, 255, 122]], [60, [255, 225, 77]], [90, [255, 77, 77]]];
+function auroraColor(p) {
+  let i = 1;
+  while (i < AURORA_STOPS.length - 1 && p > AURORA_STOPS[i][0]) i++;
+  const [p0, c0] = AURORA_STOPS[i - 1], [p1, c1] = AURORA_STOPS[i];
+  const f = Math.max(0, Math.min(1, (p - p0) / (p1 - p0)));
+  return c0.map((v, k) => Math.round(v + (c1[k] - v) * f));
+}
+
+// Ein Pixel je Rasterpunkt; Spalte i = Länge −180° + i, Zeile j = Breite 84° − j.
+function buildAuroraLayer() {
+  const a = auroraLayer.getContext('2d');
+  a.clearRect(0, 0, AURORA_W, AURORA_ROWS);
+  if (!aurora) return;
+  const img = a.createImageData(AURORA_W, AURORA_ROWS);
+  for (let j = 0; j < AURORA_ROWS; j++) {
+    for (let i = 0; i < AURORA_W; i++) {
+      const p = auroraAt(aurora, LAT_MAX - j, i - 180);
+      if (p < 3) continue;   // Grundrauschen ausblenden
+      const [r, g, b] = auroraColor(p);
+      const k = (j * AURORA_W + i) * 4;
+      img.data[k] = r; img.data[k + 1] = g; img.data[k + 2] = b;
+      img.data[k + 3] = Math.round(Math.min(1, (p - 2) / 40) * 0.8 * 255);
+    }
+  }
+  a.putImageData(img, 0, 0);
+}
+
+function renderAurora() {
+  if (!SHOW_AURORA || !aurora) return;
+  // Pixelmitte = Rasterpunkt, deshalb um einen halben Grad versetzt; am Kartenrand umbrechen.
+  const x = projX(-180.5);
+  const y = projY(LAT_MAX + 0.5);
+  const h = AURORA_ROWS / LAT_RANGE * cssH;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(auroraLayer, x, y, cssW, h);
+  ctx.drawImage(auroraLayer, x - cssW, y, cssW, h);
+}
+
+// Tooltip für die Polarlicht-Ebene an der Mausposition (wenn dort kein anderes Objekt liegt).
+function auroraHoverTarget(m) {
+  if (!SHOW_AURORA || !aurora) return null;
+  const lat = LAT_MAX - m.y / cssH * LAT_RANGE;
+  const lon = m.x / cssW * 360 - 180 + centerLon;
+  const p = auroraAt(aurora, lat, lon);
+  if (p < 3) return null;
+  return {
+    x: m.x, y: m.y, r: 6,
+    title: 'Polarlicht',
+    lines: [`Wahrscheinlichkeit hier: ${p} %`, `Vorhersage für ${timeIn(LOCAL_TZ, new Date(aurora.forecast))} deiner Zeit`],
+  };
+}
+
 // ---------- Flaggen ----------
 
 const flagImages = new Map();   // Ländercode -> HTMLImageElement
@@ -256,6 +331,8 @@ function cityTooltipLines(c, now) {
     lines.push(`Sonnenaufgang ${timeIn(c.tz, sun.rise)} · Sonnenuntergang ${timeIn(c.tz, sun.set)}`);
     lines.push(`Tageslänge ${Math.floor(mins / 60)} h ${mins % 60} min`);
   }
+  const p = SHOW_AURORA ? auroraAt(aurora, c.lat, c.lon) : 0;
+  if (p > 0) lines.push(`Polarlicht-Wahrscheinlichkeit ${p} %`);
   return lines;
 }
 
@@ -606,6 +683,8 @@ function render(now) {
   ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(nightLayer, 0, 0, cssW, cssH);
 
+  renderAurora();
+
   hoverTargets = [];
 
   renderQuakes(now);
@@ -654,9 +733,10 @@ const tooltipEl = document.getElementById('mapTooltip');
 
 function updateTooltip() {
   // Zuletzt gezeichnetes Objekt gewinnt bei Überlappung (ISS über Städten über Sonne über Mond).
-  const hit = mouse && hoverTargets.findLast(t =>
+  const hit = mouse && (hoverTargets.findLast(t =>
     Math.hypot(mouse.x - t.x, mouse.y - t.y) <= t.r ||
-    (t.rects || []).some(r => mouse.x >= r.x && mouse.x <= r.x + r.w && mouse.y >= r.y && mouse.y <= r.y + r.h));
+    (t.rects || []).some(r => mouse.x >= r.x && mouse.x <= r.x + r.w && mouse.y >= r.y && mouse.y <= r.y + r.h))
+    || auroraHoverTarget(mouse));
   if (!hit) { tooltipEl.hidden = true; return; }
   tooltipEl.replaceChildren(
     Object.assign(document.createElement('strong'), { textContent: hit.title }),
@@ -685,6 +765,7 @@ function updateLegend() {
   document.getElementById('legendMoon').hidden = !SHOW_MOON;
   document.getElementById('legendIss').hidden = !(SHOW_ISS && issElements);
   document.getElementById('legendQuake').hidden = !(SHOW_QUAKES && quakesLoaded);
+  document.getElementById('legendAurora').hidden = !(SHOW_AURORA && aurora);
 }
 
 function drawCities(now, localOff) {
@@ -902,6 +983,7 @@ function tick() {
     if (SHOW_WEATHER && now.getTime() - weatherLoadedAt > WEATHER_TTL) refreshWeather();
     if (SHOW_ISS && now.getTime() - issLoadedAt > ISS_TLE_TTL) refreshIss();
     if (SHOW_QUAKES && now.getTime() - quakesLoadedAt > QUAKE_TTL) refreshQuakes();
+    if (SHOW_AURORA && now.getTime() - auroraLoadedAt > AURORA_TTL) refreshAurora();
   }
 }
 
@@ -920,11 +1002,13 @@ function tick() {
   CLOCK = settings.clock;
   SHOW_QUAKES = settings.showQuakes;
   QUAKE_MIN_MAG = settings.quakeMinMag;
+  SHOW_AURORA = settings.showAurora;
   setTheme(themeState);
   resize();
   refreshWeather();
   refreshIss();
   refreshQuakes();
+  refreshAurora();
 
   onThemeChanged(setTheme);
 
@@ -940,12 +1024,14 @@ function tick() {
     CLOCK = s.clock;
     SHOW_QUAKES = s.showQuakes;
     QUAKE_MIN_MAG = s.quakeMinMag;
+    SHOW_AURORA = s.showAurora;
     updateHeader(new Date());
     render(new Date());
     refreshWeather();   // holt nur fehlende/veraltete Städte nach (Cache)
     if (SHOW_ISS && !issElements) refreshIss();
     // Neu laden beim Einschalten oder wenn die Mindeststärke einen anderen Feed braucht.
     if (SHOW_QUAKES && (!quakesLoaded || quakeFeedLoaded !== quakeFeed(QUAKE_MIN_MAG))) refreshQuakes();
+    if (SHOW_AURORA && !aurora) refreshAurora();
   });
 
   // openOptionsPage schlägt fehl, wenn Chrome noch ein Manifest ohne options_ui
