@@ -189,6 +189,9 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color:
 
 /* Auswahl zwischen zwei Werten (Uhrzeitformat, Temperatureinheit) */
 .toggle.choice { align-items: center; justify-content: space-between; cursor: default; }
+/* Unteroption, die zur Option darüber gehört (eingerückt, ausgegraut wenn diese aus ist) */
+.toggle.sub-option { margin-left: 28px; max-width: 612px; }
+.toggle.sub-option.disabled { opacity: 0.55; }
 .segmented {
   display: inline-flex;
   flex: none;

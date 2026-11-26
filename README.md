@@ -8,10 +8,11 @@ Browser-Erweiterung (Manifest V3) für Chrome und Firefox, die die Seite „Neue
 
 - **Weltkarte im neuen Tab**: Länderumrisse auf einer Karte von 84° N bis 60° S. Die Antarktis ist abgeschnitten.
 - **Tag/Nacht-Grenze**: Die Nachtseite wird abgedunkelt, mit weicher Dämmerung bis 12° unter dem Horizont.
-- **Mittag in der Mitte (optional)**: Statt die Tag/Nacht-Grenze über die Karte wandern zu lassen, verschiebt sich die Karte selbst. Der Ort, an dem gerade 12 Uhr mittags ist (Sonnenhöchststand), steht dann immer in der Mitte. Städte, Sonne, Mond, ISS und die Zeitzonenleiste wandern mit, am Rand läuft die Karte nahtlos weiter.
+- **Mittag in der Mitte (optional)**: Statt die Tag/Nacht-Grenze über die Karte wandern zu lassen, verschiebt sich die Karte selbst. Der Ort, an dem gerade 12 Uhr mittags ist (Sonnenhöchststand), steht dann immer in der Mitte. Städte, Sonne, Mond, ISS, Erdbeben und die Zeitzonenleiste wandern mit, am Rand läuft die Karte nahtlos weiter.
 - **Sonne im Zenit (optional)**: Markiert den Punkt, an dem die Sonne gerade senkrecht steht (inklusive Zeitgleichung). Beim Überfahren mit der Maus erscheint ein Tooltip.
 - **Mond mit Mondphase (optional)**: Markiert den Punkt, an dem der Mond gerade im Zenit steht. Die Scheibe zeigt die aktuelle Phase, so wie sie von der Nordhalbkugel aus zu sehen ist (zunehmend = rechts hell). Beim Überfahren mit der Maus zeigt ein Tooltip den Namen der Phase (z. B. „Zunehmender Mond“) und den beleuchteten Anteil in Prozent.
 - **ISS (optional)**: Zeigt die aktuelle Position der Internationalen Raumstation als kleines Symbol, dazu ihre Bahnspur: einen halben Umlauf zurück (blass) und einen Umlauf voraus (gestrichelt). Die Position wird alle 10 Sekunden aktualisiert. Beim Überfahren mit der Maus zeigt ein Tooltip Koordinaten und Bahnhöhe.
+- **Erdbeben (optional)**: Markiert die Erdbeben der letzten 24 Stunden als rote Kreise, deren Größe mit der Stärke wächst. Ältere Beben werden blasser, Beben der letzten Stunde bekommen einen zusätzlichen Ring. Die Mindeststärke ist einstellbar (ab 2,5 bis ab 6,0, Standard ab 4,5). Beim Überfahren mit der Maus zeigt ein Tooltip Stärke, Region, Zeitpunkt, Koordinaten und Herdtiefe. Daten vom USGS, alle 10 Minuten aktualisiert.
 - **Städte mit Uhrzeit**: Jede ausgewählte Stadt bekommt ein Label mit Name und Ortszeit. Liegt die Stadt bereits an einem anderen Tag als du, steht zusätzlich der Wochentag dabei. Labels werden automatisch so platziert, dass sie sich möglichst nicht überlappen, bei Bedarf mit Hilfslinie.
 - **Stadt-Infos im Tooltip**: Beim Überfahren einer Stadt (Punkt oder Label) mit der Maus zeigt ein Tooltip Breiten- und Längengrad sowie Sonnenaufgang, Sonnenuntergang und Tageslänge für den heutigen Tag, jeweils in Ortszeit. Nördlich bzw. südlich der Polarkreise steht dort gegebenenfalls „Polartag“ oder „Polarnacht“.
 - **Landesflaggen (optional)**: Links neben dem Ortsnamen steht die Flagge des zugehörigen Landes. Für eigene Städte lässt sich das Land beim Anlegen auswählen.
@@ -23,7 +24,7 @@ Browser-Erweiterung (Manifest V3) für Chrome und Firefox, die die Seite „Neue
   - Zwölf Farb-Themes (Nacht, Hell, Atlas, Ozean, Abendrot, Terminal, Herbst, Hochkontrast, Rosé, Neon, Golden, Wiese) mit Vorschau
   - Eigenes Theme: alle Karten- und Oberflächenfarben sowie die Nachtintensität frei einstellbar
   - Auswahl aus 101 Städten, gruppiert nach Regionen (Nordamerika, Mittel- & Südamerika, Europa, Afrika, Asien, Ozeanien)
-  - Sonne, Mond, ISS, „Mittag in der Mitte“, Landesflaggen und Wetteranzeige einzeln ein- und ausschalten (Sonne und Mond sind standardmäßig an)
+  - Sonne, Mond, ISS, Erdbeben (mit Mindeststärke), „Mittag in der Mitte“, Landesflaggen und Wetteranzeige einzeln ein- und ausschalten (Sonne und Mond sind standardmäßig an)
   - Uhrzeitformat: 24 Stunden (Standard) oder 12 Stunden mit AM/PM; gilt für Kopfzeile, Städte, Zeitzonenleiste und Sonnenzeiten
   - Temperatureinheit: °C (Standard) oder °F
   - Suche nach Stadt, Land oder Zeitzone

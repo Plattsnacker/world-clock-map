@@ -56,6 +56,20 @@
         </span>
       </label>
       <label class="toggle">
+        <input id="showQuakes" type="checkbox">
+        <span>
+          <span class="toggle-label">Erdbeben anzeigen</span>
+          <span class="toggle-hint">Markiert die Erdbeben der letzten 24 Stunden. Je stärker das Beben, desto größer der Kreis; ältere Beben werden blasser, Beben der letzten Stunde bekommen einen Ring. Daten vom <a href="https://earthquake.usgs.gov/earthquakes/feed/" target="_blank" rel="noopener">USGS</a>, alle 10 Minuten aktualisiert.</span>
+        </span>
+      </label>
+      <div class="toggle choice sub-option" id="quakeMinMagRow">
+        <span>
+          <span class="toggle-label" id="quakeMinMagLabel">Mindeststärke der Erdbeben</span>
+          <span class="toggle-hint">Nur Beben ab dieser Magnitude werden angezeigt. Ab 4,5 sind es weltweit meist 5 bis 20 pro Tag, ab 2,5 deutlich mehr (vor allem in den USA).</span>
+        </span>
+        <select id="quakeMinMag" aria-labelledby="quakeMinMagLabel"></select>
+      </div>
+      <label class="toggle">
         <input id="centerNoon" type="checkbox">
         <span>
           <span class="toggle-label">Mittag in der Mitte</span>

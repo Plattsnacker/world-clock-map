@@ -15,6 +15,8 @@ let CENTER_NOON = DEFAULT_SETTINGS.centerNoon;
 let SHOW_ISS = DEFAULT_SETTINGS.showIss;
 let TEMP_UNIT = DEFAULT_SETTINGS.tempUnit;
 let CLOCK = DEFAULT_SETTINGS.clock;
+let SHOW_QUAKES = DEFAULT_SETTINGS.showQuakes;
+let QUAKE_MIN_MAG = DEFAULT_SETTINGS.quakeMinMag;
 let weather = new Map();   // weatherKey(city) -> { temp, code, day } (weather.js)
 let weatherLoadedAt = 0;
 
@@ -60,6 +62,8 @@ function canvasColors(t) {
     issPanel: t.accent,
     issTrack: rgba(t.text, dark ? 0.45 : 0.55),
     issTrackPast: rgba(t.text, dark ? 0.18 : 0.25),
+    // Erdbeben in festem Rot, damit sie sich von Städten und eigener Zeitzone abheben.
+    quake: dark ? '#ff5d4f' : '#d7362a',
   };
 }
 
@@ -145,6 +149,71 @@ function renderIss(now) {
     title: 'ISS',
     lines: [`${formatLatLon(pos.lat, pos.lon, 1)} · ${Math.round(pos.alt)} km Höhe`],
   });
+}
+
+// ---------- Erdbeben ----------
+
+let quakes = [];        // Beben der letzten 24 h (earthquakes.js)
+let quakesLoadedAt = 0;
+let quakesLoaded = false;
+let quakeFeedLoaded = null;
+
+async function refreshQuakes() {
+  if (!SHOW_QUAKES) return;
+  quakesLoadedAt = Date.now();
+  quakeFeedLoaded = quakeFeed(QUAKE_MIN_MAG);
+  quakes = await fetchQuakes(QUAKE_MIN_MAG);
+  quakesLoaded = true;
+  render(new Date());
+}
+
+// Radius wächst mit der Stärke: M 2,5 → 3 px, M 4,5 → 6 px, M 7 → 10 px.
+const quakeRadius = mag => Math.max(3, 3 + (mag - 2.5) * 1.6);
+
+function formatAgo(ms) {
+  const mins = Math.max(0, Math.round(ms / 60000));
+  if (mins < 60) return `vor ${mins} min`;
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return m ? `vor ${h} h ${m} min` : `vor ${h} h`;
+}
+
+function renderQuakes(now) {
+  if (!SHOW_QUAKES) return;
+  const t = now.getTime();
+  // Schwache Beben zuerst, damit starke obenauf liegen.
+  const visible = quakes
+    .filter(q => q.mag >= QUAKE_MIN_MAG && t - q.time <= QUAKE_WINDOW && q.lat <= LAT_MAX && q.lat >= LAT_MIN)
+    .sort((a, b) => a.mag - b.mag);
+
+  for (const q of visible) {
+    const x = projX(q.lon), y = projY(q.lat), r = quakeRadius(q.mag);
+    const age = Math.min(1, Math.max(0, (t - q.time) / QUAKE_WINDOW));   // 0 = gerade eben, 1 = vor 24 h
+
+    // Frische Beben (letzte Stunde) bekommen einen zusätzlichen Ring.
+    if (t - q.time < 3600000) {
+      ctx.strokeStyle = rgba(COLORS.quake, 0.5);
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(x, y, r + 4, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.fillStyle = rgba(COLORS.quake, 0.7 - age * 0.45);
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = COLORS.dotStroke;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.strokeStyle = rgba(COLORS.quake, 0.95);
+    ctx.beginPath(); ctx.arc(x, y, r - 0.5, 0, Math.PI * 2); ctx.stroke();
+
+    const when = new Date(q.time);
+    const lines = [];
+    if (q.place) lines.push(q.place);
+    lines.push(`${formatAgo(t - q.time)}, um ${timeIn(LOCAL_TZ, when)} deiner Zeit`);
+    lines.push(`${formatLatLon(q.lat, q.lon, 2)}${q.depth != null ? ` · Tiefe ${Math.round(q.depth)} km` : ''}`);
+    hoverTargets.push({
+      x, y, r: Math.max(r + 2, 7),
+      title: `Erdbeben der Stärke ${q.mag.toFixed(1).replace('.', ',')}`,
+      lines,
+    });
+  }
 }
 
 // ---------- Flaggen ----------
@@ -539,6 +608,8 @@ function render(now) {
 
   hoverTargets = [];
 
+  renderQuakes(now);
+
   // Mond
   if (SHOW_MOON) {
     const moon = moonPosition(now);
@@ -613,6 +684,7 @@ function updateLegend() {
   document.getElementById('legendSun').hidden = !SHOW_SUN;
   document.getElementById('legendMoon').hidden = !SHOW_MOON;
   document.getElementById('legendIss').hidden = !(SHOW_ISS && issElements);
+  document.getElementById('legendQuake').hidden = !(SHOW_QUAKES && quakesLoaded);
 }
 
 function drawCities(now, localOff) {
@@ -829,6 +901,7 @@ function tick() {
     render(now);
     if (SHOW_WEATHER && now.getTime() - weatherLoadedAt > WEATHER_TTL) refreshWeather();
     if (SHOW_ISS && now.getTime() - issLoadedAt > ISS_TLE_TTL) refreshIss();
+    if (SHOW_QUAKES && now.getTime() - quakesLoadedAt > QUAKE_TTL) refreshQuakes();
   }
 }
 
@@ -845,10 +918,13 @@ function tick() {
   SHOW_ISS = settings.showIss;
   TEMP_UNIT = settings.tempUnit;
   CLOCK = settings.clock;
+  SHOW_QUAKES = settings.showQuakes;
+  QUAKE_MIN_MAG = settings.quakeMinMag;
   setTheme(themeState);
   resize();
   refreshWeather();
   refreshIss();
+  refreshQuakes();
 
   onThemeChanged(setTheme);
 
@@ -862,10 +938,14 @@ function tick() {
     SHOW_ISS = s.showIss;
     TEMP_UNIT = s.tempUnit;
     CLOCK = s.clock;
+    SHOW_QUAKES = s.showQuakes;
+    QUAKE_MIN_MAG = s.quakeMinMag;
     updateHeader(new Date());
     render(new Date());
     refreshWeather();   // holt nur fehlende/veraltete Städte nach (Cache)
     if (SHOW_ISS && !issElements) refreshIss();
+    // Neu laden beim Einschalten oder wenn die Mindeststärke einen anderen Feed braucht.
+    if (SHOW_QUAKES && (!quakesLoaded || quakeFeedLoaded !== quakeFeed(QUAKE_MIN_MAG))) refreshQuakes();
   });
 
   // openOptionsPage schlägt fehl, wenn Chrome noch ein Manifest ohne options_ui
