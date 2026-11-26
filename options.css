@@ -150,6 +150,7 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color:
 
 .city .info { min-width: 0; flex: 1; }
 .city .name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.city .flag { width: 16px; height: 12px; margin-right: 6px; vertical-align: -1px; border-radius: 2px; box-shadow: 0 0 0 0.5px var(--line); }
 .city .tz { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .city .time { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--muted); }
 .city.on .time { color: var(--text); }
@@ -191,7 +192,7 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color:
 
 .custom-form {
   display: grid;
-  grid-template-columns: 1.3fr 1.5fr 1fr 1fr auto;
+  grid-template-columns: 1.3fr 1.5fr 1.3fr 1fr 1fr auto;
   gap: 10px;
   align-items: end;
   margin-top: 16px;
@@ -200,6 +201,7 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color:
   border: 1px solid var(--line);
   border-radius: 10px;
 }
+.custom-form select { min-width: 0; padding: 7px 8px; }
 .custom-form label {
   display: flex;
   flex-direction: column;

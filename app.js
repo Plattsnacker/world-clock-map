@@ -10,6 +10,7 @@ let CITIES = resolveCities(DEFAULT_SETTINGS);
 let SHOW_WEATHER = DEFAULT_SETTINGS.showWeather;
 let SHOW_SUN = DEFAULT_SETTINGS.showSun;
 let SHOW_MOON = DEFAULT_SETTINGS.showMoon;
+let SHOW_FLAGS = DEFAULT_SETTINGS.showFlags;
 let weather = new Map();   // weatherKey(city) -> { temp, code, day } (weather.js)
 let weatherLoadedAt = 0;
 
@@ -41,6 +42,7 @@ function canvasColors(t) {
     labelBg: rgba(t.label, dark ? 0.72 : 0.85),
     labelName: mixHex(t.muted, t.text, 0.3),
     labelTime: t.text,
+    flagRim: rgba(t.text, 0.25),
     dotStroke: dark ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.85)',
     weather: {
       sun: t.sun,
@@ -60,6 +62,29 @@ async function refreshWeather() {
   weatherLoadedAt = Date.now();
   weather = await fetchWeather(CITIES);
   render(new Date());
+}
+
+// ---------- Flaggen ----------
+
+const flagImages = new Map();   // Ländercode -> HTMLImageElement
+let flagRenderPending = false;
+
+// Liefert die Flagge, sobald sie geladen ist; lädt sie sonst nach und zeichnet dann neu.
+function flagImage(code) {
+  if (!hasFlag(code)) return null;
+  const key = code.toLowerCase();
+  let img = flagImages.get(key);
+  if (!img) {
+    img = new Image();
+    img.onload = () => {
+      if (flagRenderPending) return;
+      flagRenderPending = true;
+      requestAnimationFrame(() => { flagRenderPending = false; render(new Date()); });
+    };
+    img.src = flagUrl(key);
+    flagImages.set(key, img);
+  }
+  return img.complete && img.naturalWidth ? img : null;
 }
 
 const formatTemp = t => {
@@ -466,8 +491,14 @@ function drawCities(now, localOff) {
     const day = dayKeyIn(c.tz, now);
     const name = day !== localDay ? `${c.name} · ${weekdayIn(c.tz, now)}` : c.name;
     const wx = SHOW_WEATHER ? weather.get(weatherKey(c)) : null;
-    return { c, x, y, isLocal, name, time: timeIn(c.tz, now), wx };
+    const flag = SHOW_FLAGS ? flagImage(c.country) : null;
+    return { c, x, y, isLocal, name, time: timeIn(c.tz, now), wx, flag };
   });
+
+  // Flagge im Seitenverhältnis 4:3, so hoch wie die Großbuchstaben des Namens.
+  const flagH = Math.round(nameSize * 0.85);
+  const flagW = Math.round(flagH * 4 / 3);
+  const flagGap = 4;
 
   const iconSize = Math.round(timeSize * 1.15);
   const tempSize = Math.round(12 * scale);
@@ -475,7 +506,7 @@ function drawCities(now, localOff) {
 
   for (const it of items) {
     ctx.font = `${nameSize}px "Segoe UI", system-ui, sans-serif`;
-    const wName = ctx.measureText(it.name).width;
+    const wName = ctx.measureText(it.name).width + (it.flag ? flagW + flagGap : 0);
     ctx.font = `600 ${timeSize}px "Segoe UI", system-ui, sans-serif`;
     const wTime = ctx.measureText(it.time).width;
     let wWeather = 0;
@@ -537,7 +568,16 @@ function drawCities(now, localOff) {
     ctx.textBaseline = 'top';
     ctx.font = `${nameSize}px "Segoe UI", system-ui, sans-serif`;
     ctx.fillStyle = COLORS.labelName;
-    ctx.fillText(it.name, box.x + padX, box.y + padY);
+    let nameX = box.x + padX;
+    if (it.flag) {
+      const fy = Math.round(box.y + padY + (nameSize - flagH) / 2 + 1);
+      ctx.drawImage(it.flag, nameX, fy, flagW, flagH);
+      ctx.strokeStyle = COLORS.flagRim;
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(nameX + 0.25, fy + 0.25, flagW - 0.5, flagH - 0.5);
+      nameX += flagW + flagGap;
+    }
+    ctx.fillText(it.name, nameX, box.y + padY);
     ctx.font = `600 ${timeSize}px "Segoe UI", system-ui, sans-serif`;
     ctx.fillStyle = it.isLocal ? COLORS.local : COLORS.labelTime;
     const rowY = box.y + padY + nameSize + gap;
@@ -626,6 +666,7 @@ function tick() {
   SHOW_WEATHER = settings.showWeather;
   SHOW_SUN = settings.showSun;
   SHOW_MOON = settings.showMoon;
+  SHOW_FLAGS = settings.showFlags;
   setTheme(themeState);
   resize();
   refreshWeather();
@@ -637,6 +678,7 @@ function tick() {
     SHOW_WEATHER = s.showWeather;
     SHOW_SUN = s.showSun;
     SHOW_MOON = s.showMoon;
+    SHOW_FLAGS = s.showFlags;
     render(new Date());
     refreshWeather();   // holt nur fehlende/veraltete Städte nach (Cache)
   });

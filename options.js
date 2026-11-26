@@ -60,13 +60,19 @@ function cityCard(city, { removable = false } = {}) {
   const card = el('label', { className: 'city' + (cb.checked ? ' on' : '') }, [
     cb,
     el('span', { className: 'info' }, [
-      el('div', { className: 'name', textContent: city.name }),
+      el('div', { className: 'name' }, [
+        ...(hasFlag(city.country)
+          ? [el('img', { className: 'flag', src: flagUrl(city.country), alt: '', title: countryName(city.country) })]
+          : []),
+        city.name,
+      ]),
       el('div', { className: 'tz', textContent: city.tz.replace(/_/g, ' ') }),
     ]),
     time,
   ]);
   card.dataset.id = city.id;
-  card.dataset.search = `${city.name} ${city.tz} ${city.region || ''}`.toLowerCase();
+  const country = hasFlag(city.country) ? countryName(city.country) : '';
+  card.dataset.search = `${city.name} ${city.tz} ${city.region || ''} ${country}`.toLowerCase();
 
   cb.addEventListener('change', () => {
     setSelected(city.id, cb.checked);
@@ -172,6 +178,14 @@ function fillTimeZoneList() {
   zones.forEach(z => list.append(el('option', { value: z })));
 }
 
+function fillCountryList() {
+  const select = formEl.elements.country;
+  const countries = [...FLAG_CODES]
+    .map(code => ({ code, name: countryName(code) }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'de'));
+  countries.forEach(c => select.append(el('option', { value: c.code, textContent: c.name })));
+}
+
 formEl.addEventListener('submit', e => {
   e.preventDefault();
   const f = new FormData(formEl);
@@ -188,7 +202,9 @@ formEl.addEventListener('submit', e => {
   formErrorEl.textContent = err;
   if (err) return;
 
+  const country = String(f.get('country') || '');
   const city = { id: 'custom-' + Date.now().toString(36), name, tz, lat, lon };
+  if (hasFlag(country)) city.country = country;
   settings.custom.push(city);
   settings.selected.push(city.id);
   formEl.reset();
@@ -379,7 +395,7 @@ function renderEditor() {
 
   settings = await loadSettings();
 
-  for (const key of ['showSun', 'showMoon', 'showWeather']) {
+  for (const key of ['showSun', 'showMoon', 'showFlags', 'showWeather']) {
     const cb = document.getElementById(key);
     cb.checked = settings[key];
     cb.addEventListener('change', () => {
@@ -389,6 +405,7 @@ function renderEditor() {
   }
 
   fillTimeZoneList();
+  fillCountryList();
   renderAll();
 
   setInterval(() => {
