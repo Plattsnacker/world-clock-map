@@ -11,114 +11,114 @@ const REGIONS = [
   'Ozeanien',
 ];
 
-// [Name, IANA-Zeitzone, Breite, Länge, Region-Index]
+// [Name, IANA-Zeitzone, Breite, Länge, Region-Index, Ländercode (ISO 3166-1 alpha-2)]
 const CATALOG_RAW = [
-  ['Honolulu',        'Pacific/Honolulu',               21.31, -157.86, 0],
-  ['Anchorage',       'America/Anchorage',              61.22, -149.90, 0],
-  ['Vancouver',       'America/Vancouver',              49.28, -123.12, 0],
-  ['Seattle',         'America/Los_Angeles',            47.61, -122.33, 0],
-  ['San Francisco',   'America/Los_Angeles',            37.77, -122.42, 0],
-  ['Los Angeles',     'America/Los_Angeles',            34.05, -118.24, 0],
-  ['Las Vegas',       'America/Los_Angeles',            36.17, -115.14, 0],
-  ['Phoenix',         'America/Phoenix',                33.45, -112.07, 0],
-  ['Calgary',         'America/Edmonton',               51.05, -114.07, 0],
-  ['Denver',          'America/Denver',                 39.74, -104.99, 0],
-  ['Dallas',          'America/Chicago',                32.78,  -96.80, 0],
-  ['Houston',         'America/Chicago',                29.76,  -95.37, 0],
-  ['Chicago',         'America/Chicago',                41.88,  -87.63, 0],
-  ['Atlanta',         'America/New_York',               33.75,  -84.39, 0],
-  ['Miami',           'America/New_York',               25.76,  -80.19, 0],
-  ['Toronto',         'America/Toronto',                43.65,  -79.38, 0],
-  ['Montreal',        'America/Toronto',                45.50,  -73.57, 0],
-  ['New York',        'America/New_York',               40.71,  -74.01, 0],
-  ['Washington',      'America/New_York',               38.91,  -77.04, 0],
-  ['Boston',          'America/New_York',               42.36,  -71.06, 0],
-  ['Halifax',         'America/Halifax',                44.65,  -63.57, 0],
-  ["St. John's",      'America/St_Johns',               47.56,  -52.71, 0],
-  ['Nuuk',            'America/Nuuk',                   64.18,  -51.72, 0],
+  ['Honolulu',        'Pacific/Honolulu',               21.31, -157.86, 0, 'us'],
+  ['Anchorage',       'America/Anchorage',              61.22, -149.90, 0, 'us'],
+  ['Vancouver',       'America/Vancouver',              49.28, -123.12, 0, 'ca'],
+  ['Seattle',         'America/Los_Angeles',            47.61, -122.33, 0, 'us'],
+  ['San Francisco',   'America/Los_Angeles',            37.77, -122.42, 0, 'us'],
+  ['Los Angeles',     'America/Los_Angeles',            34.05, -118.24, 0, 'us'],
+  ['Las Vegas',       'America/Los_Angeles',            36.17, -115.14, 0, 'us'],
+  ['Phoenix',         'America/Phoenix',                33.45, -112.07, 0, 'us'],
+  ['Calgary',         'America/Edmonton',               51.05, -114.07, 0, 'ca'],
+  ['Denver',          'America/Denver',                 39.74, -104.99, 0, 'us'],
+  ['Dallas',          'America/Chicago',                32.78,  -96.80, 0, 'us'],
+  ['Houston',         'America/Chicago',                29.76,  -95.37, 0, 'us'],
+  ['Chicago',         'America/Chicago',                41.88,  -87.63, 0, 'us'],
+  ['Atlanta',         'America/New_York',               33.75,  -84.39, 0, 'us'],
+  ['Miami',           'America/New_York',               25.76,  -80.19, 0, 'us'],
+  ['Toronto',         'America/Toronto',                43.65,  -79.38, 0, 'ca'],
+  ['Montreal',        'America/Toronto',                45.50,  -73.57, 0, 'ca'],
+  ['New York',        'America/New_York',               40.71,  -74.01, 0, 'us'],
+  ['Washington',      'America/New_York',               38.91,  -77.04, 0, 'us'],
+  ['Boston',          'America/New_York',               42.36,  -71.06, 0, 'us'],
+  ['Halifax',         'America/Halifax',                44.65,  -63.57, 0, 'ca'],
+  ["St. John's",      'America/St_Johns',               47.56,  -52.71, 0, 'ca'],
+  ['Nuuk',            'America/Nuuk',                   64.18,  -51.72, 0, 'gl'],
 
-  ['Mexiko-Stadt',    'America/Mexico_City',            19.43,  -99.13, 1],
-  ['Havanna',         'America/Havana',                 23.11,  -82.37, 1],
-  ['Panama-Stadt',    'America/Panama',                  8.98,  -79.52, 1],
-  ['Bogotá',          'America/Bogota',                  4.71,  -74.07, 1],
-  ['Caracas',         'America/Caracas',                10.48,  -66.90, 1],
-  ['Quito',           'America/Guayaquil',              -0.18,  -78.47, 1],
-  ['Lima',            'America/Lima',                  -12.05,  -77.04, 1],
-  ['La Paz',          'America/La_Paz',                -16.49,  -68.12, 1],
-  ['Santiago de Chile','America/Santiago',             -33.45,  -70.67, 1],
-  ['Buenos Aires',    'America/Argentina/Buenos_Aires',-34.60,  -58.38, 1],
-  ['Montevideo',      'America/Montevideo',            -34.90,  -56.16, 1],
-  ['São Paulo',       'America/Sao_Paulo',             -23.55,  -46.63, 1],
-  ['Rio de Janeiro',  'America/Sao_Paulo',             -22.91,  -43.17, 1],
+  ['Mexiko-Stadt',    'America/Mexico_City',            19.43,  -99.13, 1, 'mx'],
+  ['Havanna',         'America/Havana',                 23.11,  -82.37, 1, 'cu'],
+  ['Panama-Stadt',    'America/Panama',                  8.98,  -79.52, 1, 'pa'],
+  ['Bogotá',          'America/Bogota',                  4.71,  -74.07, 1, 'co'],
+  ['Caracas',         'America/Caracas',                10.48,  -66.90, 1, 've'],
+  ['Quito',           'America/Guayaquil',              -0.18,  -78.47, 1, 'ec'],
+  ['Lima',            'America/Lima',                  -12.05,  -77.04, 1, 'pe'],
+  ['La Paz',          'America/La_Paz',                -16.49,  -68.12, 1, 'bo'],
+  ['Santiago de Chile','America/Santiago',             -33.45,  -70.67, 1, 'cl'],
+  ['Buenos Aires',    'America/Argentina/Buenos_Aires',-34.60,  -58.38, 1, 'ar'],
+  ['Montevideo',      'America/Montevideo',            -34.90,  -56.16, 1, 'uy'],
+  ['São Paulo',       'America/Sao_Paulo',             -23.55,  -46.63, 1, 'br'],
+  ['Rio de Janeiro',  'America/Sao_Paulo',             -22.91,  -43.17, 1, 'br'],
 
-  ['Reykjavík',       'Atlantic/Reykjavik',             64.15,  -21.94, 2],
-  ['Dublin',          'Europe/Dublin',                  53.35,   -6.26, 2],
-  ['Lissabon',        'Europe/Lisbon',                  38.72,   -9.14, 2],
-  ['Madrid',          'Europe/Madrid',                  40.42,   -3.70, 2],
-  ['London',          'Europe/London',                  51.51,   -0.13, 2],
-  ['Paris',           'Europe/Paris',                   48.86,    2.35, 2],
-  ['Amsterdam',       'Europe/Amsterdam',               52.37,    4.90, 2],
-  ['Brüssel',         'Europe/Brussels',                50.85,    4.35, 2],
-  ['Zürich',          'Europe/Zurich',                  47.38,    8.54, 2],
-  ['Rom',             'Europe/Rome',                    41.90,   12.50, 2],
-  ['Hamburg',         'Europe/Berlin',                  53.55,    9.99, 2],
-  ['Berlin',          'Europe/Berlin',                  52.52,   13.40, 2],
-  ['Köln',            'Europe/Berlin',                  50.94,    6.96, 2],
-  ['Frankfurt',       'Europe/Berlin',                  50.11,    8.68, 2],
-  ['München',         'Europe/Berlin',                  48.14,   11.58, 2],
-  ['Wien',            'Europe/Vienna',                  48.21,   16.37, 2],
-  ['Prag',            'Europe/Prague',                  50.08,   14.44, 2],
-  ['Kopenhagen',      'Europe/Copenhagen',              55.68,   12.57, 2],
-  ['Oslo',            'Europe/Oslo',                    59.91,   10.75, 2],
-  ['Stockholm',       'Europe/Stockholm',               59.33,   18.07, 2],
-  ['Warschau',        'Europe/Warsaw',                  52.23,   21.01, 2],
-  ['Budapest',        'Europe/Budapest',                47.50,   19.04, 2],
-  ['Helsinki',        'Europe/Helsinki',                60.17,   24.94, 2],
-  ['Athen',           'Europe/Athens',                  37.98,   23.73, 2],
-  ['Kiew',            'Europe/Kyiv',                    50.45,   30.52, 2],
-  ['Istanbul',        'Europe/Istanbul',                41.01,   28.98, 2],
-  ['Moskau',          'Europe/Moscow',                  55.76,   37.62, 2],
+  ['Reykjavík',       'Atlantic/Reykjavik',             64.15,  -21.94, 2, 'is'],
+  ['Dublin',          'Europe/Dublin',                  53.35,   -6.26, 2, 'ie'],
+  ['Lissabon',        'Europe/Lisbon',                  38.72,   -9.14, 2, 'pt'],
+  ['Madrid',          'Europe/Madrid',                  40.42,   -3.70, 2, 'es'],
+  ['London',          'Europe/London',                  51.51,   -0.13, 2, 'gb'],
+  ['Paris',           'Europe/Paris',                   48.86,    2.35, 2, 'fr'],
+  ['Amsterdam',       'Europe/Amsterdam',               52.37,    4.90, 2, 'nl'],
+  ['Brüssel',         'Europe/Brussels',                50.85,    4.35, 2, 'be'],
+  ['Zürich',          'Europe/Zurich',                  47.38,    8.54, 2, 'ch'],
+  ['Rom',             'Europe/Rome',                    41.90,   12.50, 2, 'it'],
+  ['Hamburg',         'Europe/Berlin',                  53.55,    9.99, 2, 'de'],
+  ['Berlin',          'Europe/Berlin',                  52.52,   13.40, 2, 'de'],
+  ['Köln',            'Europe/Berlin',                  50.94,    6.96, 2, 'de'],
+  ['Frankfurt',       'Europe/Berlin',                  50.11,    8.68, 2, 'de'],
+  ['München',         'Europe/Berlin',                  48.14,   11.58, 2, 'de'],
+  ['Wien',            'Europe/Vienna',                  48.21,   16.37, 2, 'at'],
+  ['Prag',            'Europe/Prague',                  50.08,   14.44, 2, 'cz'],
+  ['Kopenhagen',      'Europe/Copenhagen',              55.68,   12.57, 2, 'dk'],
+  ['Oslo',            'Europe/Oslo',                    59.91,   10.75, 2, 'no'],
+  ['Stockholm',       'Europe/Stockholm',               59.33,   18.07, 2, 'se'],
+  ['Warschau',        'Europe/Warsaw',                  52.23,   21.01, 2, 'pl'],
+  ['Budapest',        'Europe/Budapest',                47.50,   19.04, 2, 'hu'],
+  ['Helsinki',        'Europe/Helsinki',                60.17,   24.94, 2, 'fi'],
+  ['Athen',           'Europe/Athens',                  37.98,   23.73, 2, 'gr'],
+  ['Kiew',            'Europe/Kyiv',                    50.45,   30.52, 2, 'ua'],
+  ['Istanbul',        'Europe/Istanbul',                41.01,   28.98, 2, 'tr'],
+  ['Moskau',          'Europe/Moscow',                  55.76,   37.62, 2, 'ru'],
 
-  ['Casablanca',      'Africa/Casablanca',              33.57,   -7.59, 3],
-  ['Dakar',           'Africa/Dakar',                   14.72,  -17.47, 3],
-  ['Accra',           'Africa/Accra',                    5.60,   -0.19, 3],
-  ['Lagos',           'Africa/Lagos',                    6.52,    3.38, 3],
-  ['Kairo',           'Africa/Cairo',                   30.04,   31.24, 3],
-  ['Addis Abeba',     'Africa/Addis_Ababa',              9.03,   38.74, 3],
-  ['Nairobi',         'Africa/Nairobi',                 -1.29,   36.82, 3],
-  ['Kinshasa',        'Africa/Kinshasa',                -4.44,   15.27, 3],
-  ['Johannesburg',    'Africa/Johannesburg',           -26.20,   28.05, 3],
-  ['Kapstadt',        'Africa/Johannesburg',           -33.92,   18.42, 3],
+  ['Casablanca',      'Africa/Casablanca',              33.57,   -7.59, 3, 'ma'],
+  ['Dakar',           'Africa/Dakar',                   14.72,  -17.47, 3, 'sn'],
+  ['Accra',           'Africa/Accra',                    5.60,   -0.19, 3, 'gh'],
+  ['Lagos',           'Africa/Lagos',                    6.52,    3.38, 3, 'ng'],
+  ['Kairo',           'Africa/Cairo',                   30.04,   31.24, 3, 'eg'],
+  ['Addis Abeba',     'Africa/Addis_Ababa',              9.03,   38.74, 3, 'et'],
+  ['Nairobi',         'Africa/Nairobi',                 -1.29,   36.82, 3, 'ke'],
+  ['Kinshasa',        'Africa/Kinshasa',                -4.44,   15.27, 3, 'cd'],
+  ['Johannesburg',    'Africa/Johannesburg',           -26.20,   28.05, 3, 'za'],
+  ['Kapstadt',        'Africa/Johannesburg',           -33.92,   18.42, 3, 'za'],
 
-  ['Tel Aviv',        'Asia/Jerusalem',                 32.09,   34.78, 4],
-  ['Riad',            'Asia/Riyadh',                    24.71,   46.68, 4],
-  ['Teheran',         'Asia/Tehran',                    35.69,   51.39, 4],
-  ['Dubai',           'Asia/Dubai',                     25.20,   55.27, 4],
-  ['Karatschi',       'Asia/Karachi',                   24.86,   67.01, 4],
-  ['Almaty',          'Asia/Almaty',                    43.24,   76.89, 4],
-  ['Neu-Delhi',       'Asia/Kolkata',                   28.61,   77.21, 4],
-  ['Mumbai',          'Asia/Kolkata',                   19.08,   72.88, 4],
-  ['Kathmandu',       'Asia/Kathmandu',                 27.72,   85.32, 4],
-  ['Dhaka',           'Asia/Dhaka',                     23.81,   90.41, 4],
-  ['Bangkok',         'Asia/Bangkok',                   13.76,  100.50, 4],
-  ['Singapur',        'Asia/Singapore',                  1.35,  103.82, 4],
-  ['Jakarta',         'Asia/Jakarta',                   -6.21,  106.85, 4],
-  ['Hongkong',        'Asia/Hong_Kong',                 22.32,  114.17, 4],
-  ['Manila',          'Asia/Manila',                    14.60,  120.98, 4],
-  ['Peking',          'Asia/Shanghai',                  39.90,  116.40, 4],
-  ['Shanghai',        'Asia/Shanghai',                  31.23,  121.47, 4],
-  ['Seoul',           'Asia/Seoul',                     37.57,  126.98, 4],
-  ['Tokio',           'Asia/Tokyo',                     35.68,  139.69, 4],
-  ['Wladiwostok',     'Asia/Vladivostok',               43.12,  131.89, 4],
+  ['Tel Aviv',        'Asia/Jerusalem',                 32.09,   34.78, 4, 'il'],
+  ['Riad',            'Asia/Riyadh',                    24.71,   46.68, 4, 'sa'],
+  ['Teheran',         'Asia/Tehran',                    35.69,   51.39, 4, 'ir'],
+  ['Dubai',           'Asia/Dubai',                     25.20,   55.27, 4, 'ae'],
+  ['Karatschi',       'Asia/Karachi',                   24.86,   67.01, 4, 'pk'],
+  ['Almaty',          'Asia/Almaty',                    43.24,   76.89, 4, 'kz'],
+  ['Neu-Delhi',       'Asia/Kolkata',                   28.61,   77.21, 4, 'in'],
+  ['Mumbai',          'Asia/Kolkata',                   19.08,   72.88, 4, 'in'],
+  ['Kathmandu',       'Asia/Kathmandu',                 27.72,   85.32, 4, 'np'],
+  ['Dhaka',           'Asia/Dhaka',                     23.81,   90.41, 4, 'bd'],
+  ['Bangkok',         'Asia/Bangkok',                   13.76,  100.50, 4, 'th'],
+  ['Singapur',        'Asia/Singapore',                  1.35,  103.82, 4, 'sg'],
+  ['Jakarta',         'Asia/Jakarta',                   -6.21,  106.85, 4, 'id'],
+  ['Hongkong',        'Asia/Hong_Kong',                 22.32,  114.17, 4, 'hk'],
+  ['Manila',          'Asia/Manila',                    14.60,  120.98, 4, 'ph'],
+  ['Peking',          'Asia/Shanghai',                  39.90,  116.40, 4, 'cn'],
+  ['Shanghai',        'Asia/Shanghai',                  31.23,  121.47, 4, 'cn'],
+  ['Seoul',           'Asia/Seoul',                     37.57,  126.98, 4, 'kr'],
+  ['Tokio',           'Asia/Tokyo',                     35.68,  139.69, 4, 'jp'],
+  ['Wladiwostok',     'Asia/Vladivostok',               43.12,  131.89, 4, 'ru'],
 
-  ['Perth',           'Australia/Perth',               -31.95,  115.86, 5],
-  ['Darwin',          'Australia/Darwin',              -12.46,  130.84, 5],
-  ['Adelaide',        'Australia/Adelaide',            -34.93,  138.60, 5],
-  ['Brisbane',        'Australia/Brisbane',            -27.47,  153.03, 5],
-  ['Melbourne',       'Australia/Melbourne',           -37.81,  144.96, 5],
-  ['Sydney',          'Australia/Sydney',              -33.87,  151.21, 5],
-  ['Auckland',        'Pacific/Auckland',              -36.85,  174.76, 5],
-  ['Suva (Fidschi)',  'Pacific/Fiji',                  -18.14,  178.44, 5],
+  ['Perth',           'Australia/Perth',               -31.95,  115.86, 5, 'au'],
+  ['Darwin',          'Australia/Darwin',              -12.46,  130.84, 5, 'au'],
+  ['Adelaide',        'Australia/Adelaide',            -34.93,  138.60, 5, 'au'],
+  ['Brisbane',        'Australia/Brisbane',            -27.47,  153.03, 5, 'au'],
+  ['Melbourne',       'Australia/Melbourne',           -37.81,  144.96, 5, 'au'],
+  ['Sydney',          'Australia/Sydney',              -33.87,  151.21, 5, 'au'],
+  ['Auckland',        'Pacific/Auckland',              -36.85,  174.76, 5, 'nz'],
+  ['Suva (Fidschi)',  'Pacific/Fiji',                  -18.14,  178.44, 5, 'fj'],
 ];
 
 function slugify(s) {
@@ -134,8 +134,34 @@ function isValidTimeZone(tz) {
 }
 
 const CATALOG = CATALOG_RAW
-  .map(([name, tz, lat, lon, r]) => ({ id: slugify(name), name, tz, lat, lon, region: REGIONS[r] }))
+  .map(([name, tz, lat, lon, r, country]) => ({ id: slugify(name), name, tz, lat, lon, region: REGIONS[r], country }))
   .filter(c => isValidTimeZone(c.tz));
+
+
+// ---------- Flaggen (flags/, aus dem MIT-lizenzierten Paket flag-icons) ----------
+
+// Ländercodes, für die eine Flagge in flags/<code>.svg liegt.
+const FLAG_CODES = new Set((
+  'ad ae af ag ai al am ao aq ar as at au aw ax az ba bb bd be bf bg bh bi bj bl bm bn bo bq br bs ' +
+  'bt bv bw by bz ca cc cd cf cg ch ci ck cl cm cn co cr cu cv cw cx cy cz de dj dk dm do dz ec ee ' +
+  'eg eh er es et fi fj fk fm fo fr ga gb gd ge gf gg gh gi gl gm gn gp gq gr gs gt gu gw gy hk hm ' +
+  'hn hr ht hu id ie il im in io iq ir is it je jm jo jp ke kg kh ki km kn kp kr kw ky kz la lb lc ' +
+  'li lk lr ls lt lu lv ly ma mc md me mf mg mh mk ml mm mn mo mp mq mr ms mt mu mv mw mx my mz na ' +
+  'nc ne nf ng ni nl no np nr nu nz om pa pe pf pg ph pk pl pm pn pr ps pt pw py qa re ro rs ru rw ' +
+  'sa sb sc sd se sg sh si sj sk sl sm sn so sr ss st sv sx sy sz tc td tf tg th tj tk tl tm tn to ' +
+  'tr tt tv tw tz ua ug um us uy uz va vc ve vg vi vn vu wf ws xk ye yt za zm zw'
+).split(' '));
+
+const hasFlag = code => typeof code === 'string' && FLAG_CODES.has(code.toLowerCase());
+const flagUrl = code => `flags/${code.toLowerCase()}.svg`;
+
+let regionNames = null;
+function countryName(code) {
+  try {
+    regionNames = regionNames || new Intl.DisplayNames(['de'], { type: 'region' });
+    return regionNames.of(code.toUpperCase()) || code.toUpperCase();
+  } catch { return code.toUpperCase(); }
+}
 
 const DEFAULT_IDS = [
   'honolulu', 'anchorage', 'vancouver', 'los-angeles', 'denver', 'mexiko-stadt',
@@ -145,7 +171,7 @@ const DEFAULT_IDS = [
   'perth', 'sydney', 'auckland',
 ];
 
-const DEFAULT_SETTINGS = { selected: DEFAULT_IDS, custom: [], showWeather: false, showSun: true, showMoon: true };
+const DEFAULT_SETTINGS = { selected: DEFAULT_IDS, custom: [], showWeather: false, showSun: true, showMoon: true, showFlags: false };
 
 // ---------- Speicher (chrome.storage.sync, Fallback localStorage für lokale Tests) ----------
 
@@ -165,6 +191,7 @@ async function loadSettings() {
     showWeather: s.showWeather === true,
     showSun: s.showSun !== false,
     showMoon: s.showMoon !== false,
+    showFlags: s.showFlags === true,
   };
 }
 
@@ -175,6 +202,7 @@ async function saveSettings(settings) {
     showWeather: !!settings.showWeather,
     showSun: settings.showSun !== false,
     showMoon: settings.showMoon !== false,
+    showFlags: !!settings.showFlags,
   };
   if (hasChromeStorage) await chrome.storage.sync.set(data);
   else localStorage.setItem(LS_KEY, JSON.stringify(data));
@@ -183,7 +211,7 @@ async function saveSettings(settings) {
 function onSettingsChanged(callback) {
   if (hasChromeStorage) {
     chrome.storage.onChanged.addListener((changes, area) => {
-      if (area === 'sync' && (changes.selected || changes.custom || changes.showWeather || changes.showSun || changes.showMoon)) loadSettings().then(callback);
+      if (area === 'sync' && (changes.selected || changes.custom || changes.showWeather || changes.showSun || changes.showMoon || changes.showFlags)) loadSettings().then(callback);
     });
   } else {
     window.addEventListener('storage', e => { if (e.key === LS_KEY) loadSettings().then(callback); });

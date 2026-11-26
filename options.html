@@ -49,6 +49,13 @@
         </span>
       </label>
       <label class="toggle">
+        <input id="showFlags" type="checkbox">
+        <span>
+          <span class="toggle-label">Landesflaggen anzeigen</span>
+          <span class="toggle-hint">Zeigt links neben jedem Ortsnamen die Flagge des zugehörigen Landes.</span>
+        </span>
+      </label>
+      <label class="toggle">
         <input id="showWeather" type="checkbox">
         <span>
           <span class="toggle-label">Aktuelles Wetter anzeigen</span>
@@ -84,6 +91,11 @@
         </label>
         <label>Zeitzone
           <input name="tz" type="text" required list="tzList" placeholder="z. B. Europe/Berlin" autocomplete="off">
+        </label>
+        <label>Land
+          <select name="country">
+            <option value="">– ohne Flagge –</option>
+          </select>
         </label>
         <label>Breitengrad
           <input name="lat" type="number" required step="any" min="-90" max="90" placeholder="53.08">

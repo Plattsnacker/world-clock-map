@@ -11,6 +11,7 @@ Browser-Erweiterung (Manifest V3) für Chrome und Firefox, die die Seite „Neue
 - **Sonne im Zenit (optional)**: Markiert den Punkt, an dem die Sonne gerade senkrecht steht (inklusive Zeitgleichung). Beim Überfahren mit der Maus erscheint ein Tooltip.
 - **Mond mit Mondphase (optional)**: Markiert den Punkt, an dem der Mond gerade im Zenit steht. Die Scheibe zeigt die aktuelle Phase, so wie sie von der Nordhalbkugel aus zu sehen ist (zunehmend = rechts hell). Beim Überfahren mit der Maus zeigt ein Tooltip den Namen der Phase (z. B. „Zunehmender Mond“) und den beleuchteten Anteil in Prozent.
 - **Städte mit Uhrzeit**: Jede ausgewählte Stadt bekommt ein Label mit Name und Ortszeit. Liegt die Stadt bereits an einem anderen Tag als du, steht zusätzlich der Wochentag dabei. Labels werden automatisch so platziert, dass sie sich möglichst nicht überlappen, bei Bedarf mit Hilfslinie.
+- **Landesflaggen (optional)**: Links neben dem Ortsnamen steht die Flagge des zugehörigen Landes. Für eigene Städte lässt sich das Land beim Anlegen auswählen.
 - **Aktuelles Wetter (optional)**: Neben der Uhrzeit jeder Stadt stehen die aktuelle Temperatur in °C und ein kleines Wettersymbol (klar, teils bewölkt, bewölkt, Nebel, Regen, Schnee, Gewitter; nachts mit Mond). Die Symbole übernehmen die Farben des aktiven Themes.
 - **Eigene Zeitzone hervorgehoben**: Städte in deiner Zeitzone und der passende Zeitzonen-Streifen sind orange markiert.
 - **Zeitzonenleiste**: Unter der Karte steht für jede Zone von UTC−12 bis UTC+12 die aktuelle Uhrzeit.
@@ -19,10 +20,10 @@ Browser-Erweiterung (Manifest V3) für Chrome und Firefox, die die Seite „Neue
   - Zwölf Farb-Themes (Nacht, Hell, Atlas, Ozean, Abendrot, Terminal, Herbst, Hochkontrast, Rosé, Neon, Golden, Wiese) mit Vorschau
   - Eigenes Theme: alle Karten- und Oberflächenfarben sowie die Nachtintensität frei einstellbar
   - Auswahl aus 101 Städten, gruppiert nach Regionen (Nordamerika, Mittel- & Südamerika, Europa, Afrika, Asien, Ozeanien)
-  - Sonne, Mond und Wetteranzeige einzeln ein- und ausschalten (Sonne und Mond sind standardmäßig an)
-  - Suche nach Stadt oder Zeitzone
+  - Sonne, Mond, Landesflaggen und Wetteranzeige einzeln ein- und ausschalten (Sonne und Mond sind standardmäßig an)
+  - Suche nach Stadt, Land oder Zeitzone
   - „Alle auswählen“, „Keine“ und „Standard“, auch einzeln pro Region
-  - Eigene Städte mit Name, IANA-Zeitzone (z. B. `Europe/Berlin`) und Koordinaten anlegen
+  - Eigene Städte mit Name, IANA-Zeitzone (z. B. `Europe/Berlin`), Land (optional, für die Flagge) und Koordinaten anlegen
   - Änderungen werden sofort gespeichert und in offenen Tabs übernommen.
 
 ## Installation
@@ -63,6 +64,7 @@ Die Add-on-ID `weltzeit-karte@plattsnacker` ist im Manifest fest eingetragen. Oh
 - **Eigene Stadt hinzufügen**: Auf der Einstellungsseite unter „Eigene Städte“ Name, Zeitzone, Breiten- und Längengrad eintragen. Für die Zeitzone gibt es Vorschläge zum Auswählen. Koordinaten findest du z. B. per Rechtsklick in Google Maps.
 - **Farbschema wählen**: Auf der Einstellungsseite unter „Farbschema“ ein Theme anklicken. Mit „Eigenes Theme“ öffnet sich ein Editor. Er startet mit den Farben des zuletzt gewählten Themes. Über „Farben übernehmen von“ kannst du jederzeit ein fertiges Theme als Ausgangspunkt laden.
 - **Sonne und Mond ein- oder ausblenden**: Auf der Einstellungsseite unter „Anzeige“ die Häkchen bei „Sonne anzeigen“ bzw. „Mond anzeigen“ setzen oder entfernen. Die Tag/Nacht-Grenze bleibt immer sichtbar.
+- **Landesflaggen anzeigen**: Auf der Einstellungsseite unter „Anzeige“ das Häkchen bei „Landesflaggen anzeigen“ setzen. Die Flaggen sind lokal in der Erweiterung enthalten, es wird nichts nachgeladen.
 - **Wetter anzeigen**: Auf der Einstellungsseite unter „Anzeige“ das Häkchen bei „Aktuelles Wetter anzeigen“ setzen. Die Wetterdaten werden beim Öffnen eines Tabs geladen und alle 15 Minuten aktualisiert. Ohne Internetverbindung erscheinen die Labels einfach ohne Wetter.
 - **Zurücksetzen**: „Standard“ stellt die 31 vorausgewählten Städte wieder her. Eigene Städte bleiben erhalten, werden aber abgewählt.
 
@@ -88,9 +90,10 @@ weltkarte/
 ├── options.html               Einstellungsseite
 ├── options.js                 Städteauswahl, Suche, eigene Städte
 ├── options.css                Styles für die Einstellungsseite
-├── cities.js                  Gemeinsam genutzt: Städtekatalog, Standardauswahl, Speicherzugriff
+├── cities.js                  Gemeinsam genutzt: Städtekatalog, Standardauswahl, Speicherzugriff, Flaggen-Hilfen
 ├── weather.js                 Wetterdaten von Open-Meteo laden und cachen, Wettersymbole zeichnen
 ├── data/countries-110m.json   Länderumrisse als TopoJSON (Maßstab 1:110 Mio.)
+├── flags/                     Landesflaggen als SVG (4:3) aus flag-icons, mit eigener MIT-Lizenz
 ├── docs/                      Screenshots für die README
 └── icons/                     Icons in 16, 48 und 128 px
 ```
@@ -117,16 +120,18 @@ weltkarte/
 Neue Städte für alle Nutzer werden in `cities.js` im Array `CATALOG_RAW` ergänzt:
 
 ```js
-// [Name, IANA-Zeitzone, Breite, Länge, Region-Index]
-['Bremen', 'Europe/Berlin', 53.08, 8.80, 2],
+// [Name, IANA-Zeitzone, Breite, Länge, Region-Index, Ländercode]
+['Bremen', 'Europe/Berlin', 53.08, 8.80, 2, 'de'],
 ```
 
-Der Region-Index verweist auf das Array `REGIONS`. Die ID wird automatisch aus dem Namen erzeugt (z. B. `mexiko-stadt`). Soll die Stadt standardmäßig ausgewählt sein, die ID zusätzlich in `DEFAULT_IDS` eintragen.
+Der Region-Index verweist auf das Array `REGIONS`, der Ländercode (ISO 3166-1 alpha-2, klein geschrieben) auf die Flagge in `flags/`. Die ID wird automatisch aus dem Namen erzeugt (z. B. `mexiko-stadt`). Soll die Stadt standardmäßig ausgewählt sein, die ID zusätzlich in `DEFAULT_IDS` eintragen.
 
 ## Version
 
-1.5.0
+1.6.0
 
 ## Lizenz
 
 Veröffentlicht unter der [MIT-Lizenz](LICENSE).
+
+Die Flaggen in `flags/` stammen aus [flag-icons](https://github.com/lipis/flag-icons) (MIT-Lizenz, siehe `flags/LICENSE`).
