@@ -8,9 +8,10 @@ Browser-Erweiterung (Manifest V3) für Chrome und Firefox, die die Seite „Neue
 
 - **Weltkarte im neuen Tab**: Länderumrisse auf einer Karte von 84° N bis 60° S. Die Antarktis ist abgeschnitten.
 - **Tag/Nacht-Grenze**: Die Nachtseite wird abgedunkelt, mit weicher Dämmerung bis 12° unter dem Horizont.
-- **Mittag in der Mitte (optional)**: Statt die Tag/Nacht-Grenze über die Karte wandern zu lassen, verschiebt sich die Karte selbst. Der Ort, an dem gerade 12 Uhr mittags ist (Sonnenhöchststand), steht dann immer in der Mitte. Städte, Sonne, Mond und die Zeitzonenleiste wandern mit, am Rand läuft die Karte nahtlos weiter.
+- **Mittag in der Mitte (optional)**: Statt die Tag/Nacht-Grenze über die Karte wandern zu lassen, verschiebt sich die Karte selbst. Der Ort, an dem gerade 12 Uhr mittags ist (Sonnenhöchststand), steht dann immer in der Mitte. Städte, Sonne, Mond, ISS und die Zeitzonenleiste wandern mit, am Rand läuft die Karte nahtlos weiter.
 - **Sonne im Zenit (optional)**: Markiert den Punkt, an dem die Sonne gerade senkrecht steht (inklusive Zeitgleichung). Beim Überfahren mit der Maus erscheint ein Tooltip.
 - **Mond mit Mondphase (optional)**: Markiert den Punkt, an dem der Mond gerade im Zenit steht. Die Scheibe zeigt die aktuelle Phase, so wie sie von der Nordhalbkugel aus zu sehen ist (zunehmend = rechts hell). Beim Überfahren mit der Maus zeigt ein Tooltip den Namen der Phase (z. B. „Zunehmender Mond“) und den beleuchteten Anteil in Prozent.
+- **ISS (optional)**: Zeigt die aktuelle Position der Internationalen Raumstation als kleines Symbol, dazu ihre Bahnspur: einen halben Umlauf zurück (blass) und einen Umlauf voraus (gestrichelt). Die Position wird alle 10 Sekunden aktualisiert. Beim Überfahren mit der Maus zeigt ein Tooltip Koordinaten und Bahnhöhe.
 - **Städte mit Uhrzeit**: Jede ausgewählte Stadt bekommt ein Label mit Name und Ortszeit. Liegt die Stadt bereits an einem anderen Tag als du, steht zusätzlich der Wochentag dabei. Labels werden automatisch so platziert, dass sie sich möglichst nicht überlappen, bei Bedarf mit Hilfslinie.
 - **Landesflaggen (optional)**: Links neben dem Ortsnamen steht die Flagge des zugehörigen Landes. Für eigene Städte lässt sich das Land beim Anlegen auswählen.
 - **Aktuelles Wetter (optional)**: Neben der Uhrzeit jeder Stadt stehen die aktuelle Temperatur in °C und ein kleines Wettersymbol (klar, teils bewölkt, bewölkt, Nebel, Regen, Schnee, Gewitter; nachts mit Mond). Die Symbole übernehmen die Farben des aktiven Themes.
@@ -21,7 +22,7 @@ Browser-Erweiterung (Manifest V3) für Chrome und Firefox, die die Seite „Neue
   - Zwölf Farb-Themes (Nacht, Hell, Atlas, Ozean, Abendrot, Terminal, Herbst, Hochkontrast, Rosé, Neon, Golden, Wiese) mit Vorschau
   - Eigenes Theme: alle Karten- und Oberflächenfarben sowie die Nachtintensität frei einstellbar
   - Auswahl aus 101 Städten, gruppiert nach Regionen (Nordamerika, Mittel- & Südamerika, Europa, Afrika, Asien, Ozeanien)
-  - Sonne, Mond, „Mittag in der Mitte“, Landesflaggen und Wetteranzeige einzeln ein- und ausschalten (Sonne und Mond sind standardmäßig an)
+  - Sonne, Mond, ISS, „Mittag in der Mitte“, Landesflaggen und Wetteranzeige einzeln ein- und ausschalten (Sonne und Mond sind standardmäßig an)
   - Suche nach Stadt, Land oder Zeitzone
   - „Alle auswählen“, „Keine“ und „Standard“, auch einzeln pro Region
   - Eigene Städte mit Name, IANA-Zeitzone (z. B. `Europe/Berlin`), Land (optional, für die Flagge) und Koordinaten anlegen
@@ -65,6 +66,7 @@ Die Add-on-ID `weltzeit-karte@plattsnacker` ist im Manifest fest eingetragen. Oh
 - **Eigene Stadt hinzufügen**: Auf der Einstellungsseite unter „Eigene Städte“ Name, Zeitzone, Breiten- und Längengrad eintragen. Für die Zeitzone gibt es Vorschläge zum Auswählen. Koordinaten findest du z. B. per Rechtsklick in Google Maps.
 - **Farbschema wählen**: Auf der Einstellungsseite unter „Farbschema“ ein Theme anklicken. Mit „Eigenes Theme“ öffnet sich ein Editor. Er startet mit den Farben des zuletzt gewählten Themes. Über „Farben übernehmen von“ kannst du jederzeit ein fertiges Theme als Ausgangspunkt laden.
 - **Sonne und Mond ein- oder ausblenden**: Auf der Einstellungsseite unter „Anzeige“ die Häkchen bei „Sonne anzeigen“ bzw. „Mond anzeigen“ setzen oder entfernen. Die Tag/Nacht-Grenze bleibt immer sichtbar.
+- **ISS anzeigen**: Auf der Einstellungsseite unter „Anzeige“ das Häkchen bei „ISS anzeigen“ setzen. Die Bahndaten werden beim Öffnen eines Tabs geladen und alle 6 Stunden erneuert. Ohne Internetverbindung werden zwischengespeicherte Bahndaten bis zu einer Woche weiterverwendet, danach wird die ISS ausgeblendet.
 - **Landesflaggen anzeigen**: Auf der Einstellungsseite unter „Anzeige“ das Häkchen bei „Landesflaggen anzeigen“ setzen. Die Flaggen sind lokal in der Erweiterung enthalten, es wird nichts nachgeladen.
 - **Wetter anzeigen**: Auf der Einstellungsseite unter „Anzeige“ das Häkchen bei „Aktuelles Wetter anzeigen“ setzen. Die Wetterdaten werden beim Öffnen eines Tabs geladen und alle 15 Minuten aktualisiert. Ohne Internetverbindung erscheinen die Labels einfach ohne Wetter.
 - **Zurücksetzen**: „Standard“ stellt die 31 vorausgewählten Städte wieder her. Eigene Städte bleiben erhalten, werden aber abgewählt.
@@ -73,11 +75,13 @@ Die Add-on-ID `weltzeit-karte@plattsnacker` ist im Manifest fest eingetragen. Oh
 
 | Berechtigung | Zweck |
 | --- | --- |
-| `storage` | Speichert die Städteauswahl, eigene Städte und Einstellungen in `chrome.storage.sync`. Mit aktivierter Chrome- bzw. Firefox-Synchronisierung sind sie auf allen deinen Geräten verfügbar. Wetterdaten werden in `chrome.storage.local` zwischengespeichert. |
+| `storage` | Speichert die Städteauswahl, eigene Städte und Einstellungen in `chrome.storage.sync`. Mit aktivierter Chrome- bzw. Firefox-Synchronisierung sind sie auf allen deinen Geräten verfügbar. Wetterdaten und ISS-Bahndaten werden in `chrome.storage.local` zwischengespeichert. |
 
-Kartendaten, Städtekatalog und Berechnungen sind vollständig lokal. Solange die Wetteranzeige ausgeschaltet ist (Standard), lädt die Erweiterung nichts aus dem Internet und sendet keine Daten.
+Kartendaten, Städtekatalog und Berechnungen sind vollständig lokal. Solange Wetter- und ISS-Anzeige ausgeschaltet sind (Standard), lädt die Erweiterung nichts aus dem Internet und sendet keine Daten.
 
 Mit eingeschalteter Wetteranzeige werden die Koordinaten der ausgewählten Städte (auf zwei Nachkommastellen gerundet) an die freie Wetter-API von [Open-Meteo](https://open-meteo.com/) gesendet. Es werden weder dein eigener Standort noch andere persönliche Daten übertragen, und es ist kein API-Schlüssel nötig. Die Ergebnisse werden 15 Minuten lang zwischengespeichert, damit nicht jeder neue Tab eine Anfrage auslöst. Die kostenlose Nutzung von Open-Meteo ist auf nicht-kommerzielle Zwecke beschränkt.
+
+Mit eingeschalteter ISS-Anzeige lädt die Erweiterung höchstens alle 6 Stunden die aktuellen Bahnelemente (TLE) der ISS von [CelesTrak](https://celestrak.org/). Die Anfrage ist für alle Nutzer gleich und enthält keine Daten über dich oder deine Städte. Die Position der ISS wird daraus lokal berechnet.
 
 ## Projektstruktur
 
@@ -86,13 +90,14 @@ weltkarte/
 ├── LICENSE                    MIT-Lizenz
 ├── manifest.json              Manifest V3: ersetzt den neuen Tab, Einstellungsseite, Icons
 ├── newtab.html                Seite „Neuer Tab“
-├── app.js                     Karte zeichnen (Canvas), Sonnen- und Mondstand, Nachtschatten, Labels, Zeitzonenleiste
+├── app.js                     Karte zeichnen (Canvas), Sonnen- und Mondstand, ISS, Nachtschatten, Labels, Zeitzonenleiste
 ├── style.css                  Styles für den neuen Tab
 ├── options.html               Einstellungsseite
 ├── options.js                 Städteauswahl, Suche, eigene Städte
 ├── options.css                Styles für die Einstellungsseite
 ├── cities.js                  Gemeinsam genutzt: Städtekatalog, Standardauswahl, Speicherzugriff, Flaggen-Hilfen
 ├── weather.js                 Wetterdaten von Open-Meteo laden und cachen, Wettersymbole zeichnen
+├── iss.js                     ISS-Bahnelemente von CelesTrak laden und cachen, Position und Bahnspur berechnen
 ├── data/countries-110m.json   Länderumrisse als TopoJSON (Maßstab 1:110 Mio.)
 ├── flags/                     Landesflaggen als SVG (4:3) aus flag-icons, mit eigener MIT-Lizenz
 ├── docs/                      Screenshots für die README
@@ -103,11 +108,12 @@ weltkarte/
 
 - **Keine Abhängigkeiten, kein Build-Schritt**: Reines HTML, CSS und JavaScript.
 - **Chrome und Firefox aus einer Codebasis**: Der Code nutzt den Namensraum `chrome.*`. Firefox stellt ihn in Manifest V3 ebenfalls bereit, auch mit Promises. Firefox-spezifisch ist nur der Block `browser_specific_settings` im Manifest (Add-on-ID, Mindestversion, Angabe zur Datenerhebung). Chrome ignoriert ihn.
-- **Rendering**: Die Karte wird auf ein `<canvas>` in einfacher Plattkarten-Projektion gezeichnet und an die Pixeldichte des Bildschirms angepasst. Land, Grenzen und Zeitzonen-Streifen liegen in einer gecachten Basisebene. Nur Nachtschatten, Sonne, Mond und Städte werden neu gezeichnet.
-- **Aktualisierung**: Die Uhr in der Kopfzeile läuft sekündlich, die Karte wird einmal pro Minute neu gezeichnet und zusätzlich, sobald der Tab wieder sichtbar wird.
+- **Rendering**: Die Karte wird auf ein `<canvas>` in einfacher Plattkarten-Projektion gezeichnet und an die Pixeldichte des Bildschirms angepasst. Land, Grenzen und Zeitzonen-Streifen liegen in einer gecachten Basisebene. Nur Nachtschatten, Sonne, Mond, ISS und Städte werden neu gezeichnet.
+- **Aktualisierung**: Die Uhr in der Kopfzeile läuft sekündlich, die Karte wird einmal pro Minute neu gezeichnet (mit eingeschalteter ISS alle 10 Sekunden) und zusätzlich, sobald der Tab wieder sichtbar wird.
 - **TopoJSON**: Wird ohne Bibliothek direkt in `app.js` dekodiert. Polygone, die die Datumsgrenze überqueren (z. B. Russland, Fidschi), werden „abgewickelt“ und versetzt doppelt gezeichnet.
 - **Wetter**: Alle Städte werden in einer einzigen Sammelanfrage an Open-Meteo abgefragt (`current=temperature_2m,weather_code,is_day`). Die WMO-Wettercodes werden auf sieben Symboltypen abgebildet, die direkt auf das Canvas gezeichnet werden. Open-Meteo erlaubt Anfragen von jeder Herkunft (CORS), deshalb braucht die Erweiterung keine zusätzliche Host-Berechtigung.
 - **Mond**: Position und Phase werden mit den Hauptstörungstermen der Mondbahn (nach Meeus) berechnet, genau auf etwa ein Grad. Die Phase ergibt sich aus der Elongation zwischen Mond und Sonne.
+- **ISS**: Aus den Bahnelementen (Two-Line Elements) wird die Position lokal berechnet: Kepler-Bahn mit den säkularen Störungen durch die Erdabplattung (J2) und dem Bahnabfall durch die Restatmosphäre, Umrechnung in geografische Koordinaten über die Sternzeit und das WGS84-Ellipsoid. Mit frischen Bahnelementen liegt die Abweichung zu einer vollständigen SGP4-Rechnung bei wenigen bis einigen zehn Kilometern, auf der Karte weniger als ein Pixel bis wenige Pixel. CelesTrak erlaubt Anfragen von jeder Herkunft (CORS), eine Host-Berechtigung ist nicht nötig.
 - **Zeitzonen**: Alle Uhrzeiten kommen über `Intl.DateTimeFormat` aus der Zeitzonendatenbank des Browsers. Sommerzeit wird dadurch automatisch berücksichtigt.
 - **Lokales Testen**: `newtab.html` und `options.html` lassen sich auch über einen einfachen lokalen Webserver ohne Erweiterungskontext öffnen. Die Einstellungen landen dann im `localStorage`. Ein direkter Aufruf über `file://` funktioniert nicht, weil der Browser dann `fetch()` für die Kartendaten blockiert.
 
@@ -129,7 +135,7 @@ Der Region-Index verweist auf das Array `REGIONS`, der Ländercode (ISO 3166-1 a
 
 ## Version
 
-1.6.0
+1.7.0
 
 ## Lizenz
 

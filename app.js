@@ -12,6 +12,7 @@ let SHOW_SUN = DEFAULT_SETTINGS.showSun;
 let SHOW_MOON = DEFAULT_SETTINGS.showMoon;
 let SHOW_FLAGS = DEFAULT_SETTINGS.showFlags;
 let CENTER_NOON = DEFAULT_SETTINGS.centerNoon;
+let SHOW_ISS = DEFAULT_SETTINGS.showIss;
 let weather = new Map();   // weatherKey(city) -> { temp, code, day } (weather.js)
 let weatherLoadedAt = 0;
 
@@ -53,6 +54,10 @@ function canvasColors(t) {
       bolt: t.local,
     },
     labelTemp: mixHex(t.muted, t.text, 0.55),
+    issBody: t.text,
+    issPanel: t.accent,
+    issTrack: rgba(t.text, dark ? 0.45 : 0.55),
+    issTrackPast: rgba(t.text, dark ? 0.18 : 0.25),
   };
 }
 
@@ -63,6 +68,83 @@ async function refreshWeather() {
   weatherLoadedAt = Date.now();
   weather = await fetchWeather(CITIES);
   render(new Date());
+}
+
+// ---------- ISS ----------
+
+let issElements = null;   // Bahnelemente (iss.js), null solange keine geladen sind
+let issLoadedAt = 0;
+
+async function refreshIss() {
+  if (!SHOW_ISS) return;
+  issLoadedAt = Date.now();
+  issElements = await fetchIssTle();
+  // Ohne Bahnelemente (z. B. offline) nach 15 Minuten erneut versuchen statt erst nach 6 Stunden.
+  if (!issElements) issLoadedAt = Date.now() - ISS_TLE_TTL + 15 * 60 * 1000;
+  render(new Date());
+}
+
+// Bahnspur als Linie; an der Kartenkante (Sprung um mehr als die halbe Breite) wird sie unterbrochen.
+function strokeTrack(pts) {
+  ctx.beginPath();
+  let prevX = null;
+  for (const [lon, lat] of pts) {
+    const x = projX(lon), y = projY(lat);
+    if (prevX === null || Math.abs(x - prevX) > cssW / 2) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+    prevX = x;
+  }
+  ctx.stroke();
+}
+
+// Raumstation: Rumpf mit zwei Solarflügeln.
+function drawIss(x, y, s) {
+  ctx.strokeStyle = COLORS.dotStroke;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(x - s, y); ctx.lineTo(x + s, y); ctx.stroke();
+  ctx.strokeStyle = COLORS.issBody;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(x - s, y); ctx.lineTo(x + s, y); ctx.stroke();
+
+  const pw = s * 0.6, ph = s * 0.8;
+  ctx.fillStyle = COLORS.issPanel;
+  ctx.strokeStyle = COLORS.dotStroke;
+  ctx.lineWidth = 1;
+  for (const px of [x - s, x + s - pw]) {
+    ctx.fillRect(px, y - ph, pw, ph * 2);
+    ctx.strokeRect(px, y - ph, pw, ph * 2);
+  }
+  const b = s * 0.4;
+  ctx.fillStyle = COLORS.issBody;
+  ctx.fillRect(x - b / 2 - 0.5, y - b / 2 - 0.5, b + 1, b + 1);
+  ctx.strokeRect(x - b / 2 - 0.5, y - b / 2 - 0.5, b + 1, b + 1);
+}
+
+function renderIss(now) {
+  if (!SHOW_ISS || !issElements) return;
+  const t = now.getTime();
+  const pos = issPosition(issElements, t);
+  const period = 86400000 / issElements.n;   // Dauer eines Umlaufs (~92 min)
+
+  // Bahnspur: halber Umlauf zurück (blasser), ein Umlauf voraus (gestrichelt).
+  ctx.lineWidth = 1.2;
+  ctx.strokeStyle = COLORS.issTrackPast;
+  ctx.setLineDash([]);
+  strokeTrack(issTrack(issElements, t - period / 2, t));
+  ctx.strokeStyle = COLORS.issTrack;
+  ctx.setLineDash([4, 4]);
+  strokeTrack(issTrack(issElements, t, t + period));
+  ctx.setLineDash([]);
+
+  const x = projX(pos.lon), y = projY(pos.lat);
+  drawIss(x, y, 9);
+  const latStr = `${Math.abs(pos.lat).toFixed(1).replace('.', ',')}° ${pos.lat >= 0 ? 'N' : 'S'}`;
+  const lonStr = `${Math.abs(pos.lon).toFixed(1).replace('.', ',')}° ${pos.lon >= 0 ? 'O' : 'W'}`;
+  hoverTargets.push({
+    x, y, r: 12,
+    title: 'ISS',
+    detail: `${latStr}, ${lonStr} · ${Math.round(pos.alt)} km Höhe`,
+  });
 }
 
 // ---------- Flaggen ----------
@@ -110,7 +192,7 @@ const bandsEl = document.getElementById('bands');
 let rings = [];          // Länderumrisse als Arrays von [lon, lat]
 let cssW = 0, cssH = 0, dpr = 1;
 let baseLayer = null;    // gecachte Karte ohne zeitabhängige Elemente
-let lastMinute = -1;
+let lastSlot = -1;          // letzter Zeichen-Zeitschlitz (tick)
 
 // ---------- Zeitformatierung ----------
 
@@ -448,19 +530,20 @@ function render(now) {
   }
 
   drawCities(now, localOff);
+  renderIss(now);
   renderBands(now, localOff);
   updateTooltip();
   updateLegend();
 }
 
-// ---------- Tooltip für Sonne und Mond ----------
+// ---------- Tooltip für Sonne, Mond und ISS ----------
 
 let hoverTargets = [];   // { x, y, r, title, detail } in CSS-Pixeln der Karte
 let mouse = null;        // letzte Mausposition über der Karte
 const tooltipEl = document.getElementById('mapTooltip');
 
 function updateTooltip() {
-  // Zuletzt gezeichnetes Objekt (Sonne über Mond) gewinnt bei Überlappung.
+  // Zuletzt gezeichnetes Objekt (ISS über Sonne über Mond) gewinnt bei Überlappung.
   const hit = mouse && hoverTargets.findLast(t => Math.hypot(mouse.x - t.x, mouse.y - t.y) <= t.r);
   if (!hit) { tooltipEl.hidden = true; return; }
   tooltipEl.replaceChildren(
@@ -486,6 +569,7 @@ canvas.addEventListener('mouseleave', () => { mouse = null; updateTooltip(); });
 function updateLegend() {
   document.getElementById('legendSun').hidden = !SHOW_SUN;
   document.getElementById('legendMoon').hidden = !SHOW_MOON;
+  document.getElementById('legendIss').hidden = !(SHOW_ISS && issElements);
 }
 
 function drawCities(now, localOff) {
@@ -686,11 +770,14 @@ function updateHeader(now) {
 function tick() {
   const now = new Date();
   updateHeader(now);
-  const minute = Math.floor(now.getTime() / 60000);
-  if (minute !== lastMinute) {
-    lastMinute = minute;
+  // Die ISS legt pro Minute rund 4 Längengrade zurück, deshalb mit ihr alle 10 Sekunden neu zeichnen.
+  const step = SHOW_ISS ? 10000 : 60000;
+  const slot = Math.floor(now.getTime() / step);
+  if (slot !== lastSlot) {
+    lastSlot = slot;
     render(now);
     if (SHOW_WEATHER && now.getTime() - weatherLoadedAt > WEATHER_TTL) refreshWeather();
+    if (SHOW_ISS && now.getTime() - issLoadedAt > ISS_TLE_TTL) refreshIss();
   }
 }
 
@@ -704,9 +791,11 @@ function tick() {
   SHOW_MOON = settings.showMoon;
   SHOW_FLAGS = settings.showFlags;
   CENTER_NOON = settings.centerNoon;
+  SHOW_ISS = settings.showIss;
   setTheme(themeState);
   resize();
   refreshWeather();
+  refreshIss();
 
   onThemeChanged(setTheme);
 
@@ -717,8 +806,10 @@ function tick() {
     SHOW_MOON = s.showMoon;
     SHOW_FLAGS = s.showFlags;
     CENTER_NOON = s.centerNoon;
+    SHOW_ISS = s.showIss;
     render(new Date());
     refreshWeather();   // holt nur fehlende/veraltete Städte nach (Cache)
+    if (SHOW_ISS && !issElements) refreshIss();
   });
 
   // openOptionsPage schlägt fehl, wenn Chrome noch ein Manifest ohne options_ui
@@ -730,7 +821,7 @@ function tick() {
       location.href = 'options.html';
     }
   });
-  lastMinute = Math.floor(Date.now() / 60000);
+  lastSlot = Math.floor(Date.now() / (SHOW_ISS ? 10000 : 60000));
   setInterval(tick, 1000);
 
   let resizeTimer;
@@ -739,6 +830,6 @@ function tick() {
     resizeTimer = setTimeout(resize, 100);
   });
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) { lastMinute = -1; tick(); }
+    if (!document.hidden) { lastSlot = -1; tick(); }
   });
 })();

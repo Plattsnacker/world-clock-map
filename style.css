@@ -177,3 +177,8 @@ body {
 .map-tooltip[hidden] { display: none; }
 .map-tooltip strong { font-size: 13px; font-weight: 600; }
 .map-tooltip span { color: var(--muted); }
+
+/* ISS-Symbol in der Legende (gleiche Form wie auf der Karte) */
+.iss-icon .iss-truss { stroke: var(--text); stroke-width: 1.2; }
+.iss-icon .iss-panel { fill: var(--accent); }
+.iss-icon .iss-body  { fill: var(--text); }
