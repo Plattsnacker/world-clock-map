@@ -1,6 +1,6 @@
 # Weltzeit-Karte
 
-Chrome-Erweiterung (Manifest V3), die die Seite „Neuer Tab“ durch eine Weltkarte ersetzt. Die Karte zeigt die Tag-/Nacht-Grenze, den Sonnen- und Mondstand und die aktuellen Uhrzeiten ausgewählter Städte und aller UTC-Zeitzonen.
+Browser-Erweiterung (Manifest V3) für Chrome und Firefox, die die Seite „Neuer Tab“ durch eine Weltkarte ersetzt. Die Karte zeigt die Tag-/Nacht-Grenze, den Sonnen- und Mondstand und die aktuellen Uhrzeiten ausgewählter Städte und aller UTC-Zeitzonen.
 
 ![Neuer Tab mit Weltkarte, Tag/Nacht-Grenze und Städte-Uhrzeiten](docs/screenshot_1.png)
 
@@ -38,6 +38,25 @@ Nach Änderungen am Code auf `chrome://extensions` beim Eintrag „Weltzeit-Kart
 
 Funktioniert auch in anderen Chromium-Browsern wie Microsoft Edge (`edge://extensions`) oder Brave.
 
+Chrome zeigt beim Laden eventuell die Warnung „Unrecognized manifest key 'browser_specific_settings'“. Der Eintrag ist nur für Firefox gedacht, die Warnung kann ignoriert werden.
+
+### Firefox
+
+Benötigt Firefox 128 oder neuer. Ohne Signierung durch Mozilla lässt sich die Erweiterung in normalen Firefox-Versionen nur vorübergehend laden:
+
+1. In Firefox `about:debugging#/runtime/this-firefox` öffnen.
+2. Auf **Temporäres Add-on laden…** klicken und die Datei `manifest.json` in diesem Ordner auswählen.
+3. Einen neuen Tab öffnen. Firefox fragt eventuell, ob die geänderte Seite „Neuer Tab“ beibehalten werden soll. Bestätige mit **Änderungen behalten**.
+
+Das temporäre Add-on bleibt nur bis zum Beenden von Firefox installiert. Nach Änderungen am Code auf `about:debugging` beim Eintrag „Weltzeit-Karte“ auf **Neu laden** klicken.
+
+Für eine dauerhafte Installation gibt es zwei Wege:
+
+- **Signieren lassen**: Den Ordnerinhalt als ZIP packen (die Dateien direkt im ZIP, nicht in einem Unterordner) und auf [addons.mozilla.org](https://addons.mozilla.org/developers/) hochladen, entweder öffentlich oder als „selbst verteilt“ (unlisted). Die signierte `.xpi`-Datei lässt sich dann normal installieren.
+- **Ohne Signatur**: In Firefox Developer Edition, Nightly oder ESR unter `about:config` den Wert `xpinstall.signatures.required` auf `false` setzen und die ZIP-Datei (umbenannt in `.xpi`) über `about:addons` → Zahnrad → **Add-on aus Datei installieren…** laden.
+
+Die Add-on-ID `weltzeit-karte@plattsnacker` ist im Manifest fest eingetragen. Ohne feste ID würde Firefox bei jedem Laden eine neue vergeben, und die gespeicherten Einstellungen gingen verloren.
+
 ## Bedienung
 
 - **Städte auswählen**: Auf das Zahnrad oben rechts im neuen Tab klicken, oder auf `chrome://extensions` → Weltzeit-Karte → **Details** → **Erweiterungsoptionen**.
@@ -51,7 +70,7 @@ Funktioniert auch in anderen Chromium-Browsern wie Microsoft Edge (`edge://exten
 
 | Berechtigung | Zweck |
 | --- | --- |
-| `storage` | Speichert die Städteauswahl, eigene Städte und Einstellungen in `chrome.storage.sync`. Mit aktivierter Chrome-Synchronisierung sind sie auf allen deinen Geräten verfügbar. Wetterdaten werden in `chrome.storage.local` zwischengespeichert. |
+| `storage` | Speichert die Städteauswahl, eigene Städte und Einstellungen in `chrome.storage.sync`. Mit aktivierter Chrome- bzw. Firefox-Synchronisierung sind sie auf allen deinen Geräten verfügbar. Wetterdaten werden in `chrome.storage.local` zwischengespeichert. |
 
 Kartendaten, Städtekatalog und Berechnungen sind vollständig lokal. Solange die Wetteranzeige ausgeschaltet ist (Standard), lädt die Erweiterung nichts aus dem Internet und sendet keine Daten.
 
@@ -79,6 +98,7 @@ weltkarte/
 ## Technische Details
 
 - **Keine Abhängigkeiten, kein Build-Schritt**: Reines HTML, CSS und JavaScript.
+- **Chrome und Firefox aus einer Codebasis**: Der Code nutzt den Namensraum `chrome.*`. Firefox stellt ihn in Manifest V3 ebenfalls bereit, auch mit Promises. Firefox-spezifisch ist nur der Block `browser_specific_settings` im Manifest (Add-on-ID, Mindestversion, Angabe zur Datenerhebung). Chrome ignoriert ihn.
 - **Rendering**: Die Karte wird auf ein `<canvas>` in einfacher Plattkarten-Projektion gezeichnet und an die Pixeldichte des Bildschirms angepasst. Land, Grenzen und Zeitzonen-Streifen liegen in einer gecachten Basisebene. Nur Nachtschatten, Sonne, Mond und Städte werden neu gezeichnet.
 - **Aktualisierung**: Die Uhr in der Kopfzeile läuft sekündlich, die Karte wird einmal pro Minute neu gezeichnet und zusätzlich, sobald der Tab wieder sichtbar wird.
 - **TopoJSON**: Wird ohne Bibliothek direkt in `app.js` dekodiert. Polygone, die die Datumsgrenze überqueren (z. B. Russland, Fidschi), werden „abgewickelt“ und versetzt doppelt gezeichnet.
@@ -105,7 +125,7 @@ Der Region-Index verweist auf das Array `REGIONS`. Die ID wird automatisch aus d
 
 ## Version
 
-1.4.0
+1.5.0
 
 ## Lizenz
 
