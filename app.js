@@ -138,12 +138,10 @@ function renderIss(now) {
 
   const x = projX(pos.lon), y = projY(pos.lat);
   drawIss(x, y, 9);
-  const latStr = `${Math.abs(pos.lat).toFixed(1).replace('.', ',')}° ${pos.lat >= 0 ? 'N' : 'S'}`;
-  const lonStr = `${Math.abs(pos.lon).toFixed(1).replace('.', ',')}° ${pos.lon >= 0 ? 'O' : 'W'}`;
   hoverTargets.push({
     x, y, r: 12,
     title: 'ISS',
-    detail: `${latStr}, ${lonStr} · ${Math.round(pos.alt)} km Höhe`,
+    lines: [`${formatLatLon(pos.lat, pos.lon, 1)} · ${Math.round(pos.alt)} km Höhe`],
   });
 }
 
@@ -174,6 +172,26 @@ const formatTemp = t => {
   const r = Math.round(t);
   return `${r < 0 ? '−' : ''}${Math.abs(r)} °C`;
 };
+
+const formatDeg = (v, digits) => Math.abs(v).toFixed(digits).replace('.', ',') + '°';
+const formatLatLon = (lat, lon, digits) =>
+  `${formatDeg(lat, digits)} ${lat >= 0 ? 'N' : 'S'}, ${formatDeg(lon, digits)} ${lon >= 0 ? 'O' : 'W'}`;
+
+// Tooltip-Zeilen einer Stadt: Koordinaten sowie Sonnenauf- und -untergang in Ortszeit.
+function cityTooltipLines(c, now) {
+  const lines = [formatLatLon(c.lat, c.lon, 2)];
+  const sun = sunTimes(c.lat, c.lon, c.tz, now);
+  if (sun.polar === 'day') {
+    lines.push('Polartag: Die Sonne geht heute nicht unter');
+  } else if (sun.polar === 'night') {
+    lines.push('Polarnacht: Die Sonne geht heute nicht auf');
+  } else {
+    const mins = Math.round(sun.dayMs / 60000);
+    lines.push(`Sonnenaufgang ${timeIn(c.tz, sun.rise)} · Sonnenuntergang ${timeIn(c.tz, sun.set)}`);
+    lines.push(`Tageslänge ${Math.floor(mins / 60)} h ${mins % 60} min`);
+  }
+  return lines;
+}
 
 function setTheme(state) {
   const theme = resolveTheme(state);
@@ -377,6 +395,28 @@ function sunPosition(d) {
   return { lat: decl, lon };
 }
 
+// Sonnenauf- und -untergang am heutigen Kalendertag der Zeitzone tz (Sonnenaufgangsgleichung,
+// genau auf etwa eine Minute). Liefert { rise, set, dayMs } oder { polar: 'day' | 'night' }.
+function sunTimes(lat, lon, tz, d) {
+  const rad = Math.PI / 180;
+  const [y, m, day] = dayKeyIn(tz, d).split('-').map(Number);
+  const n = Date.UTC(y, m - 1, day) / 86400000 - 10957;     // Tage seit J2000.0 (12 Uhr UTC)
+  const jStar = n - lon / 360;                               // ungefährer Sonnenhöchststand
+  const M = mod(357.5291 + 0.98560028 * jStar, 360) * rad;   // mittlere Anomalie
+  const C = 1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M);
+  const lambda = mod(M / rad + C + 180 + 102.9372, 360) * rad; // ekliptikale Länge
+  const transit = jStar + 0.0053 * Math.sin(M) - 0.0069 * Math.sin(2 * lambda);
+  const sinD = Math.sin(lambda) * Math.sin(23.4397 * rad);
+  const cosD = Math.cos(Math.asin(sinD));
+  // −0,833°: Refraktion und Sonnenradius, d. h. der obere Rand berührt den Horizont.
+  const cosW = (Math.sin(-0.833 * rad) - Math.sin(lat * rad) * sinD) / (Math.cos(lat * rad) * cosD);
+  if (cosW < -1) return { polar: 'day' };
+  if (cosW > 1) return { polar: 'night' };
+  const w = Math.acos(cosW) / rad / 360;                     // halber Tagbogen in Tagen
+  const toDate = j => new Date((j + 10957.5) * 86400000);
+  return { rise: toDate(transit - w), set: toDate(transit + w), dayMs: 2 * w * 86400000 };
+}
+
 // ---------- Mondstand / Mondphase ----------
 
 // Vereinfachte Mondbahn (Hauptterme nach Meeus), genau auf etwa 1°.
@@ -511,7 +551,7 @@ function render(now) {
       hoverTargets.push({
         x: mx, y: my, r: 11,
         title: 'Mond',
-        detail: `${moonPhaseName(moon)} · ${Math.round(moon.illum * 100)} % beleuchtet`,
+        lines: [`${moonPhaseName(moon)} · ${Math.round(moon.illum * 100)} % beleuchtet`],
       });
     }
   }
@@ -519,7 +559,7 @@ function render(now) {
   // Sonne
   if (SHOW_SUN && sun.lat <= LAT_MAX && sun.lat >= LAT_MIN) {
     const sx = projX(sun.lon), sy = projY(sun.lat);
-    hoverTargets.push({ x: sx, y: sy, r: 11, title: 'Sonne', detail: 'steht hier im Zenit' });
+    hoverTargets.push({ x: sx, y: sy, r: 11, title: 'Sonne', lines: ['steht hier im Zenit'] });
     const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, 22);
     g.addColorStop(0, COLORS.sunGlow);
     g.addColorStop(1, COLORS.sunGlowEnd);
@@ -536,25 +576,31 @@ function render(now) {
   updateLegend();
 }
 
-// ---------- Tooltip für Sonne, Mond und ISS ----------
+// ---------- Tooltip für Sonne, Mond, ISS und Städte ----------
 
-let hoverTargets = [];   // { x, y, r, title, detail } in CSS-Pixeln der Karte
+// { x, y, r, title, lines, rects? } in CSS-Pixeln der Karte. Getroffen wird der Kreis um (x, y)
+// oder eines der Rechtecke (z. B. das Label einer Stadt).
+let hoverTargets = [];
 let mouse = null;        // letzte Mausposition über der Karte
 const tooltipEl = document.getElementById('mapTooltip');
 
 function updateTooltip() {
-  // Zuletzt gezeichnetes Objekt (ISS über Sonne über Mond) gewinnt bei Überlappung.
-  const hit = mouse && hoverTargets.findLast(t => Math.hypot(mouse.x - t.x, mouse.y - t.y) <= t.r);
+  // Zuletzt gezeichnetes Objekt gewinnt bei Überlappung (ISS über Städten über Sonne über Mond).
+  const hit = mouse && hoverTargets.findLast(t =>
+    Math.hypot(mouse.x - t.x, mouse.y - t.y) <= t.r ||
+    (t.rects || []).some(r => mouse.x >= r.x && mouse.x <= r.x + r.w && mouse.y >= r.y && mouse.y <= r.y + r.h));
   if (!hit) { tooltipEl.hidden = true; return; }
   tooltipEl.replaceChildren(
     Object.assign(document.createElement('strong'), { textContent: hit.title }),
-    Object.assign(document.createElement('span'), { textContent: hit.detail }),
+    ...hit.lines.map(text => Object.assign(document.createElement('span'), { textContent: text })),
   );
   tooltipEl.hidden = false;
-  // Über dem Objekt anzeigen, am Kartenrand nach innen bzw. unten ausweichen.
+  // Über dem Objekt (samt Label) anzeigen, am Kartenrand nach innen bzw. unten ausweichen.
+  let y0 = hit.y - hit.r, y1 = hit.y + hit.r;
+  for (const r of hit.rects || []) { y0 = Math.min(y0, r.y); y1 = Math.max(y1, r.y + r.h); }
   const w = tooltipEl.offsetWidth, h = tooltipEl.offsetHeight;
   const left = Math.max(4, Math.min(cssW - w - 4, hit.x - w / 2));
-  const top = hit.y - hit.r - h - 6 >= 4 ? hit.y - hit.r - h - 6 : hit.y + hit.r + 6;
+  const top = y0 - h - 6 >= 4 ? y0 - h - 6 : y1 + 6;
   tooltipEl.style.left = left + 'px';
   tooltipEl.style.top = top + 'px';
 }
@@ -651,6 +697,12 @@ function drawCities(now, localOff) {
     }
     box = box || candidates[0];
     placed.push(box);
+    hoverTargets.push({
+      x, y, r: 8,
+      rects: [box],
+      title: it.c.name,
+      lines: cityTooltipLines(it.c, now),
+    });
 
     const accent = it.isLocal ? COLORS.local : COLORS.city;
 
