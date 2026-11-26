@@ -395,14 +395,32 @@ function renderEditor() {
 
   settings = await loadSettings();
 
-  for (const key of ['showSun', 'showMoon', 'showFlags', 'showWeather', 'centerNoon', 'showIss']) {
+  const quakeMagEl = document.getElementById('quakeMinMag');
+  const syncQuakeRow = () => {
+    quakeMagEl.disabled = !settings.showQuakes;
+    document.getElementById('quakeMinMagRow').classList.toggle('disabled', !settings.showQuakes);
+  };
+
+  for (const key of ['showSun', 'showMoon', 'showFlags', 'showWeather', 'centerNoon', 'showIss', 'showQuakes', 'showAurora']) {
     const cb = document.getElementById(key);
     cb.checked = settings[key];
     cb.addEventListener('change', () => {
       settings[key] = cb.checked;
+      syncQuakeRow();
       persist();
     });
   }
+
+  for (const m of QUAKE_MAGNITUDES) {
+    const label = m.toFixed(1).replace('.', ',');
+    quakeMagEl.append(el('option', { value: String(m), textContent: `ab ${label}` }));
+  }
+  quakeMagEl.value = String(settings.quakeMinMag);
+  quakeMagEl.addEventListener('change', () => {
+    settings.quakeMinMag = Number(quakeMagEl.value);
+    persist();
+  });
+  syncQuakeRow();
 
   const updateTimes = () => {
     for (const [e, tz] of timeEls) if (e.isConnected) e.textContent = timeIn(tz);

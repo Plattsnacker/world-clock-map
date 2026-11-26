@@ -15,6 +15,9 @@ let CENTER_NOON = DEFAULT_SETTINGS.centerNoon;
 let SHOW_ISS = DEFAULT_SETTINGS.showIss;
 let TEMP_UNIT = DEFAULT_SETTINGS.tempUnit;
 let CLOCK = DEFAULT_SETTINGS.clock;
+let SHOW_QUAKES = DEFAULT_SETTINGS.showQuakes;
+let QUAKE_MIN_MAG = DEFAULT_SETTINGS.quakeMinMag;
+let SHOW_AURORA = DEFAULT_SETTINGS.showAurora;
 let weather = new Map();   // weatherKey(city) -> { temp, code, day } (weather.js)
 let weatherLoadedAt = 0;
 
@@ -60,6 +63,8 @@ function canvasColors(t) {
     issPanel: t.accent,
     issTrack: rgba(t.text, dark ? 0.45 : 0.55),
     issTrackPast: rgba(t.text, dark ? 0.18 : 0.25),
+    // Erdbeben in festem Rot, damit sie sich von Städten und eigener Zeitzone abheben.
+    quake: dark ? '#ff5d4f' : '#d7362a',
   };
 }
 
@@ -147,6 +152,219 @@ function renderIss(now) {
   });
 }
 
+// ---------- Erdbeben ----------
+
+let quakes = [];        // Beben der letzten 24 h (earthquakes.js)
+let quakesLoadedAt = 0;
+let quakesLoaded = false;
+let quakeFeedLoaded = null;
+
+async function refreshQuakes() {
+  if (!SHOW_QUAKES) return;
+  quakesLoadedAt = Date.now();
+  quakeFeedLoaded = quakeFeed(QUAKE_MIN_MAG);
+  quakes = await fetchQuakes(QUAKE_MIN_MAG);
+  quakesLoaded = true;
+  render(new Date());
+}
+
+// Radius wächst mit der Stärke: M 2,5 → 3 px, M 4,5 → 6 px, M 7 → 10 px.
+const quakeRadius = mag => Math.max(3, 3 + (mag - 2.5) * 1.6);
+
+function formatAgo(ms) {
+  const mins = Math.max(0, Math.round(ms / 60000));
+  if (mins < 60) return `vor ${mins} min`;
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return m ? `vor ${h} h ${m} min` : `vor ${h} h`;
+}
+
+// Sichtbare Beben mit Bildschirmposition; wird in render() bestimmt und von drawQuakes()
+// in jedem Animationsbild gezeichnet.
+let quakeMarks = [];
+
+// Langsames „Atmen“: Zyklusdauer in ms. Jedes Beben bekommt einen eigenen Versatz,
+// damit nicht alle im Gleichtakt pulsieren.
+const QUAKE_PERIOD = 3800;
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const quakePhase = id => {
+  let h = 0;
+  for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return (h % 1000) / 1000;
+};
+
+function renderQuakes(now) {
+  quakeMarks = [];
+  if (!SHOW_QUAKES) return;
+  const t = now.getTime();
+  // Schwache Beben zuerst, damit starke obenauf liegen.
+  const visible = quakes
+    .filter(q => q.mag >= QUAKE_MIN_MAG && t - q.time <= QUAKE_WINDOW && q.lat <= LAT_MAX && q.lat >= LAT_MIN)
+    .sort((a, b) => a.mag - b.mag);
+
+  for (const q of visible) {
+    const x = projX(q.lon), y = projY(q.lat), r = quakeRadius(q.mag);
+    const age = Math.min(1, Math.max(0, (t - q.time) / QUAKE_WINDOW));   // 0 = gerade eben, 1 = vor 24 h
+    quakeMarks.push({ x, y, r, age, fresh: t - q.time < 3600000, phase: quakePhase(q.id) });
+
+    const when = new Date(q.time);
+    const lines = [];
+    if (q.place) lines.push(q.place);
+    lines.push(`${formatAgo(t - q.time)}, um ${timeIn(LOCAL_TZ, when)} deiner Zeit`);
+    lines.push(`${formatLatLon(q.lat, q.lon, 2)}${q.depth != null ? ` · Tiefe ${Math.round(q.depth)} km` : ''}`);
+    hoverTargets.push({
+      x, y, r: Math.max(r + 2, 7),
+      title: `Erdbeben der Stärke ${q.mag.toFixed(1).replace('.', ',')}`,
+      lines,
+    });
+  }
+}
+
+// Zeichnet die Beben zum Zeitpunkt ms (performance.now()). Der Kreis atmet leicht,
+// dazu läuft eine blasse Welle nach außen; frische Beben (letzte Stunde) senden zwei Wellen.
+function drawQuakes(ms) {
+  const still = reducedMotion.matches;
+  for (const m of quakeMarks) {
+    const k = still ? 0 : mod(ms / QUAKE_PERIOD + m.phase, 1);   // 0…1 im Zyklus
+    const breathe = still ? 1 : 1 + 0.08 * Math.sin(k * Math.PI * 2);
+    const r = m.r * breathe;
+
+    if (still) {
+      if (m.fresh) {
+        ctx.strokeStyle = rgba(COLORS.quake, 0.5);
+        ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.arc(m.x, m.y, m.r + 4, 0, Math.PI * 2); ctx.stroke();
+      }
+    } else {
+      const strength = m.fresh ? 0.6 : 0.4 * (1 - m.age * 0.6);
+      for (const offset of m.fresh ? [0, 0.5] : [0]) {
+        const w = mod(k + offset, 1);
+        const ease = 1 - (1 - w) ** 2;   // anfangs schneller, dann auslaufend
+        ctx.strokeStyle = rgba(COLORS.quake, strength * (1 - w) ** 1.5);
+        ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.arc(m.x, m.y, m.r + 1 + ease * (m.r + 8), 0, Math.PI * 2); ctx.stroke();
+      }
+    }
+
+    ctx.fillStyle = rgba(COLORS.quake, 0.7 - m.age * 0.45);
+    ctx.beginPath(); ctx.arc(m.x, m.y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = COLORS.dotStroke;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.strokeStyle = rgba(COLORS.quake, 0.95);
+    ctx.beginPath(); ctx.arc(m.x, m.y, Math.max(0.5, r - 0.5), 0, Math.PI * 2); ctx.stroke();
+  }
+}
+
+// ---------- Ebenen und Animation ----------
+
+// render() zeichnet zwei zwischengespeicherte Ebenen: darunter Karte, Nacht und Polarlicht,
+// darüber Mond, Sonne, Städte und ISS. compose() setzt sie mit den Beben dazwischen
+// zusammen, sodass für die Animation nicht die ganze Karte neu berechnet werden muss.
+const underLayer = document.createElement('canvas');
+const overLayer = document.createElement('canvas');
+const QUAKE_FPS = 24;   // für die langsame Bewegung genügt das
+let animId = 0, lastFrame = 0;
+
+function compose(ms) {
+  if (!underLayer.width) return;   // noch nicht dimensioniert (vor dem ersten resize)
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(underLayer, 0, 0);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawQuakes(ms);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(overLayer, 0, 0);
+}
+
+function animateQuakes(ms) {
+  animId = 0;
+  if (!quakeMarks.length || reducedMotion.matches) return;
+  if (ms - lastFrame >= 1000 / QUAKE_FPS - 2) {
+    lastFrame = ms;
+    compose(ms);
+  }
+  animId = requestAnimationFrame(animateQuakes);
+}
+
+function startQuakeAnimation() {
+  if (!animId && quakeMarks.length && !reducedMotion.matches) animId = requestAnimationFrame(animateQuakes);
+}
+reducedMotion.addEventListener('change', () => { compose(performance.now()); startQuakeAnimation(); });
+
+// ---------- Polarlicht ----------
+
+let aurora = null;        // { grid, forecast } (aurora.js), null solange keine Daten vorliegen
+let auroraLoadedAt = 0;
+const AURORA_ROWS = LAT_MAX - LAT_MIN + 1;   // Rasterzeilen im sichtbaren Ausschnitt (84° N … 60° S)
+const auroraLayer = document.createElement('canvas');
+auroraLayer.width = AURORA_W;
+auroraLayer.height = AURORA_ROWS;
+
+async function refreshAurora() {
+  if (!SHOW_AURORA) return;
+  auroraLoadedAt = Date.now();
+  aurora = await fetchAurora();
+  // Ohne Daten (z. B. offline) nach 2 Minuten erneut versuchen.
+  if (!aurora) auroraLoadedAt = Date.now() - AURORA_TTL + 2 * 60 * 1000;
+  buildAuroraLayer();
+  render(new Date());
+}
+
+// Farbe nach Wahrscheinlichkeit: Grün, ab 30 % über Gelb nach Rot (wie bei NOAA).
+const AURORA_STOPS = [[0, [60, 255, 122]], [30, [60, 255, 122]], [60, [255, 225, 77]], [90, [255, 77, 77]]];
+function auroraColor(p) {
+  let i = 1;
+  while (i < AURORA_STOPS.length - 1 && p > AURORA_STOPS[i][0]) i++;
+  const [p0, c0] = AURORA_STOPS[i - 1], [p1, c1] = AURORA_STOPS[i];
+  const f = Math.max(0, Math.min(1, (p - p0) / (p1 - p0)));
+  return c0.map((v, k) => Math.round(v + (c1[k] - v) * f));
+}
+
+// Ein Pixel je Rasterpunkt; Spalte i = Länge −180° + i, Zeile j = Breite 84° − j.
+function buildAuroraLayer() {
+  const a = auroraLayer.getContext('2d');
+  a.clearRect(0, 0, AURORA_W, AURORA_ROWS);
+  if (!aurora) return;
+  const img = a.createImageData(AURORA_W, AURORA_ROWS);
+  for (let j = 0; j < AURORA_ROWS; j++) {
+    for (let i = 0; i < AURORA_W; i++) {
+      const p = auroraAt(aurora, LAT_MAX - j, i - 180);
+      if (p < 3) continue;   // Grundrauschen ausblenden
+      const [r, g, b] = auroraColor(p);
+      const k = (j * AURORA_W + i) * 4;
+      img.data[k] = r; img.data[k + 1] = g; img.data[k + 2] = b;
+      img.data[k + 3] = Math.round(Math.min(1, (p - 2) / 40) * 0.8 * 255);
+    }
+  }
+  a.putImageData(img, 0, 0);
+}
+
+function renderAurora() {
+  if (!SHOW_AURORA || !aurora) return;
+  // Pixelmitte = Rasterpunkt, deshalb um einen halben Grad versetzt; am Kartenrand umbrechen.
+  const x = projX(-180.5);
+  const y = projY(LAT_MAX + 0.5);
+  const h = AURORA_ROWS / LAT_RANGE * cssH;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(auroraLayer, x, y, cssW, h);
+  ctx.drawImage(auroraLayer, x - cssW, y, cssW, h);
+}
+
+// Tooltip für die Polarlicht-Ebene an der Mausposition (wenn dort kein anderes Objekt liegt).
+function auroraHoverTarget(m) {
+  if (!SHOW_AURORA || !aurora) return null;
+  const lat = LAT_MAX - m.y / cssH * LAT_RANGE;
+  const lon = m.x / cssW * 360 - 180 + centerLon;
+  const p = auroraAt(aurora, lat, lon);
+  if (p < 3) return null;
+  return {
+    x: m.x, y: m.y, r: 6,
+    title: 'Polarlicht',
+    lines: [`Wahrscheinlichkeit hier: ${p} %`, `Vorhersage für ${timeIn(LOCAL_TZ, new Date(aurora.forecast))} deiner Zeit`],
+  };
+}
+
 // ---------- Flaggen ----------
 
 const flagImages = new Map();   // Ländercode -> HTMLImageElement
@@ -187,6 +405,8 @@ function cityTooltipLines(c, now) {
     lines.push(`Sonnenaufgang ${timeIn(c.tz, sun.rise)} · Sonnenuntergang ${timeIn(c.tz, sun.set)}`);
     lines.push(`Tageslänge ${Math.floor(mins / 60)} h ${mins % 60} min`);
   }
+  const p = SHOW_AURORA ? auroraAt(aurora, c.lat, c.lon) : 0;
+  if (p > 0) lines.push(`Polarlicht-Wahrscheinlichkeit ${p} %`);
   return lines;
 }
 
@@ -200,7 +420,9 @@ function setTheme(state) {
 const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 const canvas = document.getElementById('map');
-const ctx = canvas.getContext('2d');
+const mainCtx = canvas.getContext('2d');
+// Zeichenziel aller Zeichenfunktionen; render() lenkt es vorübergehend auf die Ebenen um.
+let ctx = mainCtx;
 const mapWrap = document.getElementById('mapWrap');
 const bandsEl = document.getElementById('bands');
 
@@ -327,6 +549,10 @@ function resize() {
   canvas.style.height = cssH + 'px';
   canvas.width = Math.round(cssW * dpr);
   canvas.height = Math.round(cssH * dpr);
+  for (const layer of [underLayer, overLayer]) {
+    layer.width = canvas.width;
+    layer.height = canvas.height;
+  }
   bandsEl.style.width = cssW + 'px';
 
   buildBaseLayer();
@@ -514,9 +740,24 @@ function buildNightLayer(sun) {
 
 function render(now) {
   if (!baseLayer) return;
+  try {
+    renderLayers(now);
+  } finally {
+    ctx = mainCtx;
+  }
+  compose(performance.now());
+  startQuakeAnimation();
+  updateTooltip();
+  updateLegend();
+}
+
+function renderLayers(now) {
   const sun = sunPosition(now);
   centerLon = CENTER_NOON ? sun.lon : 0;
   buildNightLayer(sun);
+
+  // ----- untere Ebene: Karte, Nacht, Polarlicht -----
+  ctx = underLayer.getContext('2d');
 
   // Grundkarte um die Kartenmitte verschoben, rechts umgebrochen (ganze Gerätepixel, damit keine Naht entsteht).
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -537,7 +778,18 @@ function render(now) {
   ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(nightLayer, 0, 0, cssW, cssH);
 
+  renderAurora();
+
   hoverTargets = [];
+
+  // Beben: nur Positionen und Tooltips, gezeichnet werden sie in compose().
+  renderQuakes(now);
+
+  // ----- obere Ebene: Mond, Sonne, Städte, ISS -----
+  ctx = overLayer.getContext('2d');
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, overLayer.width, overLayer.height);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   // Mond
   if (SHOW_MOON) {
@@ -569,8 +821,6 @@ function render(now) {
   drawCities(now, localOff);
   renderIss(now);
   renderBands(now, localOff);
-  updateTooltip();
-  updateLegend();
 }
 
 // ---------- Tooltip für Sonne, Mond, ISS und Städte ----------
@@ -583,9 +833,10 @@ const tooltipEl = document.getElementById('mapTooltip');
 
 function updateTooltip() {
   // Zuletzt gezeichnetes Objekt gewinnt bei Überlappung (ISS über Städten über Sonne über Mond).
-  const hit = mouse && hoverTargets.findLast(t =>
+  const hit = mouse && (hoverTargets.findLast(t =>
     Math.hypot(mouse.x - t.x, mouse.y - t.y) <= t.r ||
-    (t.rects || []).some(r => mouse.x >= r.x && mouse.x <= r.x + r.w && mouse.y >= r.y && mouse.y <= r.y + r.h));
+    (t.rects || []).some(r => mouse.x >= r.x && mouse.x <= r.x + r.w && mouse.y >= r.y && mouse.y <= r.y + r.h))
+    || auroraHoverTarget(mouse));
   if (!hit) { tooltipEl.hidden = true; return; }
   tooltipEl.replaceChildren(
     Object.assign(document.createElement('strong'), { textContent: hit.title }),
@@ -613,6 +864,8 @@ function updateLegend() {
   document.getElementById('legendSun').hidden = !SHOW_SUN;
   document.getElementById('legendMoon').hidden = !SHOW_MOON;
   document.getElementById('legendIss').hidden = !(SHOW_ISS && issElements);
+  document.getElementById('legendQuake').hidden = !(SHOW_QUAKES && quakesLoaded);
+  document.getElementById('legendAurora').hidden = !(SHOW_AURORA && aurora);
 }
 
 function drawCities(now, localOff) {
@@ -829,6 +1082,8 @@ function tick() {
     render(now);
     if (SHOW_WEATHER && now.getTime() - weatherLoadedAt > WEATHER_TTL) refreshWeather();
     if (SHOW_ISS && now.getTime() - issLoadedAt > ISS_TLE_TTL) refreshIss();
+    if (SHOW_QUAKES && now.getTime() - quakesLoadedAt > QUAKE_TTL) refreshQuakes();
+    if (SHOW_AURORA && now.getTime() - auroraLoadedAt > AURORA_TTL) refreshAurora();
   }
 }
 
@@ -845,10 +1100,15 @@ function tick() {
   SHOW_ISS = settings.showIss;
   TEMP_UNIT = settings.tempUnit;
   CLOCK = settings.clock;
+  SHOW_QUAKES = settings.showQuakes;
+  QUAKE_MIN_MAG = settings.quakeMinMag;
+  SHOW_AURORA = settings.showAurora;
   setTheme(themeState);
   resize();
   refreshWeather();
   refreshIss();
+  refreshQuakes();
+  refreshAurora();
 
   onThemeChanged(setTheme);
 
@@ -862,10 +1122,16 @@ function tick() {
     SHOW_ISS = s.showIss;
     TEMP_UNIT = s.tempUnit;
     CLOCK = s.clock;
+    SHOW_QUAKES = s.showQuakes;
+    QUAKE_MIN_MAG = s.quakeMinMag;
+    SHOW_AURORA = s.showAurora;
     updateHeader(new Date());
     render(new Date());
     refreshWeather();   // holt nur fehlende/veraltete Städte nach (Cache)
     if (SHOW_ISS && !issElements) refreshIss();
+    // Neu laden beim Einschalten oder wenn die Mindeststärke einen anderen Feed braucht.
+    if (SHOW_QUAKES && (!quakesLoaded || quakeFeedLoaded !== quakeFeed(QUAKE_MIN_MAG))) refreshQuakes();
+    if (SHOW_AURORA && !aurora) refreshAurora();
   });
 
   // openOptionsPage schlägt fehl, wenn Chrome noch ein Manifest ohne options_ui
