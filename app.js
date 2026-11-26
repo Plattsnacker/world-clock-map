@@ -178,7 +178,22 @@ function formatAgo(ms) {
   return m ? `vor ${h} h ${m} min` : `vor ${h} h`;
 }
 
+// Sichtbare Beben mit Bildschirmposition; wird in render() bestimmt und von drawQuakes()
+// in jedem Animationsbild gezeichnet.
+let quakeMarks = [];
+
+// Langsames „Atmen“: Zyklusdauer in ms. Jedes Beben bekommt einen eigenen Versatz,
+// damit nicht alle im Gleichtakt pulsieren.
+const QUAKE_PERIOD = 3800;
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const quakePhase = id => {
+  let h = 0;
+  for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return (h % 1000) / 1000;
+};
+
 function renderQuakes(now) {
+  quakeMarks = [];
   if (!SHOW_QUAKES) return;
   const t = now.getTime();
   // Schwache Beben zuerst, damit starke obenauf liegen.
@@ -189,20 +204,7 @@ function renderQuakes(now) {
   for (const q of visible) {
     const x = projX(q.lon), y = projY(q.lat), r = quakeRadius(q.mag);
     const age = Math.min(1, Math.max(0, (t - q.time) / QUAKE_WINDOW));   // 0 = gerade eben, 1 = vor 24 h
-
-    // Frische Beben (letzte Stunde) bekommen einen zusätzlichen Ring.
-    if (t - q.time < 3600000) {
-      ctx.strokeStyle = rgba(COLORS.quake, 0.5);
-      ctx.lineWidth = 1.2;
-      ctx.beginPath(); ctx.arc(x, y, r + 4, 0, Math.PI * 2); ctx.stroke();
-    }
-    ctx.fillStyle = rgba(COLORS.quake, 0.7 - age * 0.45);
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = COLORS.dotStroke;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.strokeStyle = rgba(COLORS.quake, 0.95);
-    ctx.beginPath(); ctx.arc(x, y, r - 0.5, 0, Math.PI * 2); ctx.stroke();
+    quakeMarks.push({ x, y, r, age, fresh: t - q.time < 3600000, phase: quakePhase(q.id) });
 
     const when = new Date(q.time);
     const lines = [];
@@ -216,6 +218,78 @@ function renderQuakes(now) {
     });
   }
 }
+
+// Zeichnet die Beben zum Zeitpunkt ms (performance.now()). Der Kreis atmet leicht,
+// dazu läuft eine blasse Welle nach außen; frische Beben (letzte Stunde) senden zwei Wellen.
+function drawQuakes(ms) {
+  const still = reducedMotion.matches;
+  for (const m of quakeMarks) {
+    const k = still ? 0 : mod(ms / QUAKE_PERIOD + m.phase, 1);   // 0…1 im Zyklus
+    const breathe = still ? 1 : 1 + 0.08 * Math.sin(k * Math.PI * 2);
+    const r = m.r * breathe;
+
+    if (still) {
+      if (m.fresh) {
+        ctx.strokeStyle = rgba(COLORS.quake, 0.5);
+        ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.arc(m.x, m.y, m.r + 4, 0, Math.PI * 2); ctx.stroke();
+      }
+    } else {
+      const strength = m.fresh ? 0.6 : 0.4 * (1 - m.age * 0.6);
+      for (const offset of m.fresh ? [0, 0.5] : [0]) {
+        const w = mod(k + offset, 1);
+        const ease = 1 - (1 - w) ** 2;   // anfangs schneller, dann auslaufend
+        ctx.strokeStyle = rgba(COLORS.quake, strength * (1 - w) ** 1.5);
+        ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.arc(m.x, m.y, m.r + 1 + ease * (m.r + 8), 0, Math.PI * 2); ctx.stroke();
+      }
+    }
+
+    ctx.fillStyle = rgba(COLORS.quake, 0.7 - m.age * 0.45);
+    ctx.beginPath(); ctx.arc(m.x, m.y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = COLORS.dotStroke;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.strokeStyle = rgba(COLORS.quake, 0.95);
+    ctx.beginPath(); ctx.arc(m.x, m.y, Math.max(0.5, r - 0.5), 0, Math.PI * 2); ctx.stroke();
+  }
+}
+
+// ---------- Ebenen und Animation ----------
+
+// render() zeichnet zwei zwischengespeicherte Ebenen: darunter Karte, Nacht und Polarlicht,
+// darüber Mond, Sonne, Städte und ISS. compose() setzt sie mit den Beben dazwischen
+// zusammen, sodass für die Animation nicht die ganze Karte neu berechnet werden muss.
+const underLayer = document.createElement('canvas');
+const overLayer = document.createElement('canvas');
+const QUAKE_FPS = 24;   // für die langsame Bewegung genügt das
+let animId = 0, lastFrame = 0;
+
+function compose(ms) {
+  if (!underLayer.width) return;   // noch nicht dimensioniert (vor dem ersten resize)
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(underLayer, 0, 0);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawQuakes(ms);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(overLayer, 0, 0);
+}
+
+function animateQuakes(ms) {
+  animId = 0;
+  if (!quakeMarks.length || reducedMotion.matches) return;
+  if (ms - lastFrame >= 1000 / QUAKE_FPS - 2) {
+    lastFrame = ms;
+    compose(ms);
+  }
+  animId = requestAnimationFrame(animateQuakes);
+}
+
+function startQuakeAnimation() {
+  if (!animId && quakeMarks.length && !reducedMotion.matches) animId = requestAnimationFrame(animateQuakes);
+}
+reducedMotion.addEventListener('change', () => { compose(performance.now()); startQuakeAnimation(); });
 
 // ---------- Polarlicht ----------
 
@@ -346,7 +420,9 @@ function setTheme(state) {
 const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 const canvas = document.getElementById('map');
-const ctx = canvas.getContext('2d');
+const mainCtx = canvas.getContext('2d');
+// Zeichenziel aller Zeichenfunktionen; render() lenkt es vorübergehend auf die Ebenen um.
+let ctx = mainCtx;
 const mapWrap = document.getElementById('mapWrap');
 const bandsEl = document.getElementById('bands');
 
@@ -473,6 +549,10 @@ function resize() {
   canvas.style.height = cssH + 'px';
   canvas.width = Math.round(cssW * dpr);
   canvas.height = Math.round(cssH * dpr);
+  for (const layer of [underLayer, overLayer]) {
+    layer.width = canvas.width;
+    layer.height = canvas.height;
+  }
   bandsEl.style.width = cssW + 'px';
 
   buildBaseLayer();
@@ -660,9 +740,24 @@ function buildNightLayer(sun) {
 
 function render(now) {
   if (!baseLayer) return;
+  try {
+    renderLayers(now);
+  } finally {
+    ctx = mainCtx;
+  }
+  compose(performance.now());
+  startQuakeAnimation();
+  updateTooltip();
+  updateLegend();
+}
+
+function renderLayers(now) {
   const sun = sunPosition(now);
   centerLon = CENTER_NOON ? sun.lon : 0;
   buildNightLayer(sun);
+
+  // ----- untere Ebene: Karte, Nacht, Polarlicht -----
+  ctx = underLayer.getContext('2d');
 
   // Grundkarte um die Kartenmitte verschoben, rechts umgebrochen (ganze Gerätepixel, damit keine Naht entsteht).
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -687,7 +782,14 @@ function render(now) {
 
   hoverTargets = [];
 
+  // Beben: nur Positionen und Tooltips, gezeichnet werden sie in compose().
   renderQuakes(now);
+
+  // ----- obere Ebene: Mond, Sonne, Städte, ISS -----
+  ctx = overLayer.getContext('2d');
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, overLayer.width, overLayer.height);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   // Mond
   if (SHOW_MOON) {
@@ -719,8 +821,6 @@ function render(now) {
   drawCities(now, localOff);
   renderIss(now);
   renderBands(now, localOff);
-  updateTooltip();
-  updateLegend();
 }
 
 // ---------- Tooltip für Sonne, Mond, ISS und Städte ----------
