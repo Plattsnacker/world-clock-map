@@ -395,7 +395,7 @@ function renderEditor() {
 
   settings = await loadSettings();
 
-  for (const key of ['showSun', 'showMoon', 'showFlags', 'showWeather']) {
+  for (const key of ['showSun', 'showMoon', 'showFlags', 'showWeather', 'centerNoon']) {
     const cb = document.getElementById(key);
     cb.checked = settings[key];
     cb.addEventListener('change', () => {

@@ -11,6 +11,7 @@ let SHOW_WEATHER = DEFAULT_SETTINGS.showWeather;
 let SHOW_SUN = DEFAULT_SETTINGS.showSun;
 let SHOW_MOON = DEFAULT_SETTINGS.showMoon;
 let SHOW_FLAGS = DEFAULT_SETTINGS.showFlags;
+let CENTER_NOON = DEFAULT_SETTINGS.centerNoon;
 let weather = new Map();   // weatherKey(city) -> { temp, code, day } (weather.js)
 let weatherLoadedAt = 0;
 
@@ -197,7 +198,22 @@ async function loadMap() {
 
 // ---------- Projektion ----------
 
-const projX = lon => (lon + 180) / 360 * cssW;
+// Längengrad in der Kartenmitte: 0° (Greenwich) oder, mit „Mittag in der Mitte“,
+// der Längengrad des Sonnenhöchststands. Wird in render() gesetzt.
+let centerLon = 0;
+
+const mod = (a, n) => ((a % n) + n) % n;
+// Feste Projektion (Mitte 0°) für die gecachte Grundkarte; Längen über ±180° erlaubt.
+const baseX = lon => (lon + 180) / 360 * cssW;
+// Projektion für alles Zeitabhängige: berücksichtigt die Verschiebung und bricht um.
+const projX = lon => mod(lon - centerLon + 180, 360) / 360 * cssW;
+// Bildschirmabschnitte [x0, x1] eines Längenbereichs; am Kartenrand zweigeteilt.
+function lonSpans(lon0, lon1) {
+  const x0 = projX(lon0);
+  const x1 = x0 + (lon1 - lon0) / 360 * cssW;
+  if (x1 <= cssW + 0.01) return [[x0, Math.min(x1, cssW)]];
+  return [[x0, cssW], [0, x1 - cssW]];
+}
 const projY = lat => (LAT_MAX - lat) / LAT_RANGE * cssH;
 
 // ---------- Layout ----------
@@ -237,7 +253,7 @@ function buildBaseLayer() {
   b.beginPath();
   for (const r of rings) {
     r.forEach(([lon, lat], i) => {
-      const x = projX(lon), y = projY(lat);
+      const x = baseX(lon), y = projY(lat);
       if (i === 0) b.moveTo(x, y); else b.lineTo(x, y);
     });
     b.closePath();
@@ -250,8 +266,8 @@ function buildBaseLayer() {
 
   // Nominelle Zeitzonen-Streifen (15° breit, zentriert auf Vielfachen von 15°)
   for (let o = -12; o <= 12; o++) {
-    const x0 = projX(Math.max(-180, o * 15 - 7.5));
-    const x1 = projX(Math.min(180, o * 15 + 7.5));
+    const x0 = baseX(Math.max(-180, o * 15 - 7.5));
+    const x1 = baseX(Math.min(180, o * 15 + 7.5));
     if (o % 2 === 0) {
       b.fillStyle = COLORS.band;
       b.fillRect(x0, 0, x1 - x0, cssH);
@@ -363,7 +379,7 @@ function buildNightLayer(sun) {
     const lat = (LAT_MAX - (y + 0.5) / NIGHT_H * LAT_RANGE) * rad;
     const sinL = Math.sin(lat), cosL = Math.cos(lat);
     for (let x = 0; x < NIGHT_W; x++) {
-      const lon = ((x + 0.5) / NIGHT_W * 360 - 180) * rad;
+      const lon = ((x + 0.5) / NIGHT_W * 360 - 180 + centerLon) * rad;
       const alt = Math.asin(sinL * sinD + cosL * cosD * Math.cos(lon - sun.lon * rad)) / rad;
       let a = 0;
       if (alt < 0) a = alt <= TWILIGHT ? MAX_ALPHA : (alt / TWILIGHT) * MAX_ALPHA;
@@ -380,18 +396,22 @@ function buildNightLayer(sun) {
 function render(now) {
   if (!baseLayer) return;
   const sun = sunPosition(now);
+  centerLon = CENTER_NOON ? sun.lon : 0;
   buildNightLayer(sun);
 
+  // Grundkarte um die Kartenmitte verschoben, rechts umgebrochen (ganze Gerätepixel, damit keine Naht entsteht).
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.drawImage(baseLayer, 0, 0);
+  const shift = Math.round(mod(-centerLon / 360, 1) * baseLayer.width);
+  ctx.drawImage(baseLayer, shift, 0);
+  if (shift) ctx.drawImage(baseLayer, shift - baseLayer.width, 0);
   ctx.scale(dpr, dpr);
 
   // Lokale Zeitzone hervorheben
   const localOff = -now.getTimezoneOffset() / 60;
-  const lx0 = projX(Math.max(-180, localOff * 15 - 7.5));
-  const lx1 = projX(Math.min(180, localOff * 15 + 7.5));
   ctx.fillStyle = COLORS.localBand;
-  ctx.fillRect(lx0, 0, lx1 - lx0, cssH);
+  for (const [x0, x1] of lonSpans(Math.max(-180, localOff * 15 - 7.5), Math.min(180, localOff * 15 + 7.5))) {
+    ctx.fillRect(x0, 0, x1 - x0, cssH);
+  }
 
   // Nacht
   ctx.imageSmoothingEnabled = true;
@@ -615,16 +635,32 @@ function roundRect(x, y, w, h, r) {
 
 function renderBands(now, localOff) {
   const roundedLocal = Math.round(localOff);
-  const html = [];
+  const bandW = cssW / 24;
+  // Jede Zone als Abschnitt(e) unterhalb der Karte, passend zur aktuellen Verschiebung.
+  const segs = [];
   for (let o = -12; o <= 12; o++) {
-    const t = new Date(now.getTime() + o * 3600000);
-    const time = formatter('utc', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'UTC' }).format(t);
+    for (const [x0, x1] of lonSpans(Math.max(-180, o * 15 - 7.5), Math.min(180, o * 15 + 7.5))) {
+      if (x1 - x0 > 0.01) segs.push({ o, x0, x1 });
+    }
+  }
+  segs.sort((a, b) => a.x0 - b.x0);
+
+  const html = segs.map(({ o, x0, x1 }) => {
+    const w = x1 - x0;
     const cls = ['band'];
     if (o === roundedLocal) cls.push('local');
-    if (Math.abs(o) === 12) cls.push('edge');
-    const label = Math.abs(o) === 12 ? (o > 0 ? '+12' : '−12') : offsetLabel(o).replace('UTC', '') || 'UTC';
-    html.push(`<div class="${cls.join(' ')}" title="${offsetLabel(o)}"><div class="off">${label}</div><div class="time">${time}</div></div>`);
-  }
+    if (w < bandW * 0.75) cls.push('edge');
+    if (w < bandW * 0.99 && x0 < 0.5) cls.push('start');
+    else if (w < bandW * 0.99 && x1 > cssW - 0.5) cls.push('end');
+    let body = '';
+    if (w >= bandW * 0.45) {
+      const t = new Date(now.getTime() + o * 3600000);
+      const time = formatter('utc', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'UTC' }).format(t);
+      const label = Math.abs(o) === 12 ? (o > 0 ? '+12' : '−12') : offsetLabel(o).replace('UTC', '') || 'UTC';
+      body = `<div class="off">${label}</div><div class="time">${time}</div>`;
+    }
+    return `<div class="${cls.join(' ')}" style="flex-grow:${w.toFixed(3)}" title="${offsetLabel(o)}">${body}</div>`;
+  });
   bandsEl.innerHTML = html.join('');
 }
 
@@ -667,6 +703,7 @@ function tick() {
   SHOW_SUN = settings.showSun;
   SHOW_MOON = settings.showMoon;
   SHOW_FLAGS = settings.showFlags;
+  CENTER_NOON = settings.centerNoon;
   setTheme(themeState);
   resize();
   refreshWeather();
@@ -679,6 +716,7 @@ function tick() {
     SHOW_SUN = s.showSun;
     SHOW_MOON = s.showMoon;
     SHOW_FLAGS = s.showFlags;
+    CENTER_NOON = s.centerNoon;
     render(new Date());
     refreshWeather();   // holt nur fehlende/veraltete Städte nach (Cache)
   });
