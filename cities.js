@@ -2,16 +2,14 @@
 
 // Gemeinsamer Städtekatalog und Speicherzugriff für Neuer-Tab- und Einstellungsseite.
 
-const REGIONS = [
-  'Nordamerika',
-  'Mittel- & Südamerika',
-  'Europa',
-  'Afrika',
-  'Asien',
-  'Ozeanien',
-];
+// Regionsschlüssel; angezeigt wird regionName(key), also tr('region.<key>') (i18n.js).
+const REGIONS = ['na', 'sa', 'eu', 'af', 'as', 'oc'];
+const regionName = key => tr('region.' + key);
 
-// [Name, IANA-Zeitzone, Breite, Länge, Region-Index, Ländercode (ISO 3166-1 alpha-2)]
+// [Name, IANA-Zeitzone, Breite, Länge, Region-Index, Ländercode (ISO 3166-1 alpha-2), ID]
+// Die Namen stehen in der Landessprache, bei nicht-lateinischer Schrift auf Englisch, und
+// werden nicht übersetzt. Die optionale ID stammt aus den früheren deutschen Namen und muss
+// stabil bleiben, weil die Städteauswahl darüber gespeichert wird; fehlt sie, gilt slugify(Name).
 const CATALOG_RAW = [
   ['Honolulu',        'Pacific/Honolulu',               21.31, -157.86, 0, 'us'],
   ['Anchorage',       'America/Anchorage',              61.22, -149.90, 0, 'us'],
@@ -29,7 +27,7 @@ const CATALOG_RAW = [
   ['Atlanta',         'America/New_York',               33.75,  -84.39, 0, 'us'],
   ['Miami',           'America/New_York',               25.76,  -80.19, 0, 'us'],
   ['Toronto',         'America/Toronto',                43.65,  -79.38, 0, 'ca'],
-  ['Montreal',        'America/Toronto',                45.50,  -73.57, 0, 'ca'],
+  ['Montréal',        'America/Toronto',                45.50,  -73.57, 0, 'ca', 'montreal'],
   ['New York',        'America/New_York',               40.71,  -74.01, 0, 'us'],
   ['Washington',      'America/New_York',               38.91,  -77.04, 0, 'us'],
   ['Boston',          'America/New_York',               42.36,  -71.06, 0, 'us'],
@@ -37,9 +35,9 @@ const CATALOG_RAW = [
   ["St. John's",      'America/St_Johns',               47.56,  -52.71, 0, 'ca'],
   ['Nuuk',            'America/Nuuk',                   64.18,  -51.72, 0, 'gl'],
 
-  ['Mexiko-Stadt',    'America/Mexico_City',            19.43,  -99.13, 1, 'mx'],
-  ['Havanna',         'America/Havana',                 23.11,  -82.37, 1, 'cu'],
-  ['Panama-Stadt',    'America/Panama',                  8.98,  -79.52, 1, 'pa'],
+  ['Ciudad de México','America/Mexico_City',            19.43,  -99.13, 1, 'mx', 'mexiko-stadt'],
+  ['La Habana',       'America/Havana',                 23.11,  -82.37, 1, 'cu', 'havanna'],
+  ['Ciudad de Panamá','America/Panama',                  8.98,  -79.52, 1, 'pa', 'panama-stadt'],
   ['Bogotá',          'America/Bogota',                  4.71,  -74.07, 1, 'co'],
   ['Caracas',         'America/Caracas',                10.48,  -66.90, 1, 've'],
   ['Quito',           'America/Guayaquil',              -0.18,  -78.47, 1, 'ec'],
@@ -53,63 +51,63 @@ const CATALOG_RAW = [
 
   ['Reykjavík',       'Atlantic/Reykjavik',             64.15,  -21.94, 2, 'is'],
   ['Dublin',          'Europe/Dublin',                  53.35,   -6.26, 2, 'ie'],
-  ['Lissabon',        'Europe/Lisbon',                  38.72,   -9.14, 2, 'pt'],
+  ['Lisboa',          'Europe/Lisbon',                  38.72,   -9.14, 2, 'pt', 'lissabon'],
   ['Madrid',          'Europe/Madrid',                  40.42,   -3.70, 2, 'es'],
   ['London',          'Europe/London',                  51.51,   -0.13, 2, 'gb'],
   ['Paris',           'Europe/Paris',                   48.86,    2.35, 2, 'fr'],
   ['Amsterdam',       'Europe/Amsterdam',               52.37,    4.90, 2, 'nl'],
-  ['Brüssel',         'Europe/Brussels',                50.85,    4.35, 2, 'be'],
+  ['Bruxelles',       'Europe/Brussels',                50.85,    4.35, 2, 'be', 'brussel'],
   ['Zürich',          'Europe/Zurich',                  47.38,    8.54, 2, 'ch'],
-  ['Rom',             'Europe/Rome',                    41.90,   12.50, 2, 'it'],
+  ['Roma',            'Europe/Rome',                    41.90,   12.50, 2, 'it', 'rom'],
   ['Hamburg',         'Europe/Berlin',                  53.55,    9.99, 2, 'de'],
   ['Berlin',          'Europe/Berlin',                  52.52,   13.40, 2, 'de'],
   ['Köln',            'Europe/Berlin',                  50.94,    6.96, 2, 'de'],
   ['Frankfurt',       'Europe/Berlin',                  50.11,    8.68, 2, 'de'],
   ['München',         'Europe/Berlin',                  48.14,   11.58, 2, 'de'],
   ['Wien',            'Europe/Vienna',                  48.21,   16.37, 2, 'at'],
-  ['Prag',            'Europe/Prague',                  50.08,   14.44, 2, 'cz'],
-  ['Kopenhagen',      'Europe/Copenhagen',              55.68,   12.57, 2, 'dk'],
+  ['Praha',           'Europe/Prague',                  50.08,   14.44, 2, 'cz', 'prag'],
+  ['København',       'Europe/Copenhagen',              55.68,   12.57, 2, 'dk', 'kopenhagen'],
   ['Oslo',            'Europe/Oslo',                    59.91,   10.75, 2, 'no'],
   ['Stockholm',       'Europe/Stockholm',               59.33,   18.07, 2, 'se'],
-  ['Warschau',        'Europe/Warsaw',                  52.23,   21.01, 2, 'pl'],
+  ['Warszawa',        'Europe/Warsaw',                  52.23,   21.01, 2, 'pl', 'warschau'],
   ['Budapest',        'Europe/Budapest',                47.50,   19.04, 2, 'hu'],
   ['Helsinki',        'Europe/Helsinki',                60.17,   24.94, 2, 'fi'],
-  ['Athen',           'Europe/Athens',                  37.98,   23.73, 2, 'gr'],
-  ['Kiew',            'Europe/Kyiv',                    50.45,   30.52, 2, 'ua'],
-  ['Istanbul',        'Europe/Istanbul',                41.01,   28.98, 2, 'tr'],
-  ['Moskau',          'Europe/Moscow',                  55.76,   37.62, 2, 'ru'],
+  ['Athens',          'Europe/Athens',                  37.98,   23.73, 2, 'gr', 'athen'],
+  ['Kyiv',            'Europe/Kyiv',                    50.45,   30.52, 2, 'ua', 'kiew'],
+  ['İstanbul',        'Europe/Istanbul',                41.01,   28.98, 2, 'tr', 'istanbul'],
+  ['Moscow',          'Europe/Moscow',                  55.76,   37.62, 2, 'ru', 'moskau'],
 
   ['Casablanca',      'Africa/Casablanca',              33.57,   -7.59, 3, 'ma'],
   ['Dakar',           'Africa/Dakar',                   14.72,  -17.47, 3, 'sn'],
   ['Accra',           'Africa/Accra',                    5.60,   -0.19, 3, 'gh'],
   ['Lagos',           'Africa/Lagos',                    6.52,    3.38, 3, 'ng'],
-  ['Kairo',           'Africa/Cairo',                   30.04,   31.24, 3, 'eg'],
-  ['Addis Abeba',     'Africa/Addis_Ababa',              9.03,   38.74, 3, 'et'],
+  ['Cairo',           'Africa/Cairo',                   30.04,   31.24, 3, 'eg', 'kairo'],
+  ['Addis Ababa',     'Africa/Addis_Ababa',              9.03,   38.74, 3, 'et', 'addis-abeba'],
   ['Nairobi',         'Africa/Nairobi',                 -1.29,   36.82, 3, 'ke'],
   ['Kinshasa',        'Africa/Kinshasa',                -4.44,   15.27, 3, 'cd'],
   ['Johannesburg',    'Africa/Johannesburg',           -26.20,   28.05, 3, 'za'],
-  ['Kapstadt',        'Africa/Johannesburg',           -33.92,   18.42, 3, 'za'],
+  ['Cape Town',       'Africa/Johannesburg',           -33.92,   18.42, 3, 'za', 'kapstadt'],
 
   ['Tel Aviv',        'Asia/Jerusalem',                 32.09,   34.78, 4, 'il'],
-  ['Riad',            'Asia/Riyadh',                    24.71,   46.68, 4, 'sa'],
-  ['Teheran',         'Asia/Tehran',                    35.69,   51.39, 4, 'ir'],
+  ['Riyadh',          'Asia/Riyadh',                    24.71,   46.68, 4, 'sa', 'riad'],
+  ['Tehran',          'Asia/Tehran',                    35.69,   51.39, 4, 'ir', 'teheran'],
   ['Dubai',           'Asia/Dubai',                     25.20,   55.27, 4, 'ae'],
-  ['Karatschi',       'Asia/Karachi',                   24.86,   67.01, 4, 'pk'],
+  ['Karachi',         'Asia/Karachi',                   24.86,   67.01, 4, 'pk', 'karatschi'],
   ['Almaty',          'Asia/Almaty',                    43.24,   76.89, 4, 'kz'],
-  ['Neu-Delhi',       'Asia/Kolkata',                   28.61,   77.21, 4, 'in'],
+  ['New Delhi',       'Asia/Kolkata',                   28.61,   77.21, 4, 'in', 'neu-delhi'],
   ['Mumbai',          'Asia/Kolkata',                   19.08,   72.88, 4, 'in'],
   ['Kathmandu',       'Asia/Kathmandu',                 27.72,   85.32, 4, 'np'],
   ['Dhaka',           'Asia/Dhaka',                     23.81,   90.41, 4, 'bd'],
   ['Bangkok',         'Asia/Bangkok',                   13.76,  100.50, 4, 'th'],
-  ['Singapur',        'Asia/Singapore',                  1.35,  103.82, 4, 'sg'],
+  ['Singapore',       'Asia/Singapore',                  1.35,  103.82, 4, 'sg', 'singapur'],
   ['Jakarta',         'Asia/Jakarta',                   -6.21,  106.85, 4, 'id'],
-  ['Hongkong',        'Asia/Hong_Kong',                 22.32,  114.17, 4, 'hk'],
+  ['Hong Kong',       'Asia/Hong_Kong',                 22.32,  114.17, 4, 'hk', 'hongkong'],
   ['Manila',          'Asia/Manila',                    14.60,  120.98, 4, 'ph'],
-  ['Peking',          'Asia/Shanghai',                  39.90,  116.40, 4, 'cn'],
+  ['Beijing',         'Asia/Shanghai',                  39.90,  116.40, 4, 'cn', 'peking'],
   ['Shanghai',        'Asia/Shanghai',                  31.23,  121.47, 4, 'cn'],
   ['Seoul',           'Asia/Seoul',                     37.57,  126.98, 4, 'kr'],
-  ['Tokio',           'Asia/Tokyo',                     35.68,  139.69, 4, 'jp'],
-  ['Wladiwostok',     'Asia/Vladivostok',               43.12,  131.89, 4, 'ru'],
+  ['Tokyo',           'Asia/Tokyo',                     35.68,  139.69, 4, 'jp', 'tokio'],
+  ['Vladivostok',     'Asia/Vladivostok',               43.12,  131.89, 4, 'ru', 'wladiwostok'],
 
   ['Perth',           'Australia/Perth',               -31.95,  115.86, 5, 'au'],
   ['Darwin',          'Australia/Darwin',              -12.46,  130.84, 5, 'au'],
@@ -118,7 +116,7 @@ const CATALOG_RAW = [
   ['Melbourne',       'Australia/Melbourne',           -37.81,  144.96, 5, 'au'],
   ['Sydney',          'Australia/Sydney',              -33.87,  151.21, 5, 'au'],
   ['Auckland',        'Pacific/Auckland',              -36.85,  174.76, 5, 'nz'],
-  ['Suva (Fidschi)',  'Pacific/Fiji',                  -18.14,  178.44, 5, 'fj'],
+  ['Suva',            'Pacific/Fiji',                  -18.14,  178.44, 5, 'fj', 'suva-fidschi'],
 ];
 
 function slugify(s) {
@@ -134,7 +132,7 @@ function isValidTimeZone(tz) {
 }
 
 const CATALOG = CATALOG_RAW
-  .map(([name, tz, lat, lon, r, country]) => ({ id: slugify(name), name, tz, lat, lon, region: REGIONS[r], country }))
+  .map(([name, tz, lat, lon, r, country, id]) => ({ id: id || slugify(name), name, tz, lat, lon, region: REGIONS[r], country }))
   .filter(c => isValidTimeZone(c.tz));
 
 
@@ -155,11 +153,12 @@ const FLAG_CODES = new Set((
 const hasFlag = code => typeof code === 'string' && FLAG_CODES.has(code.toLowerCase());
 const flagUrl = code => `flags/${code.toLowerCase()}.svg`;
 
-let regionNames = null;
+// Ländername in der eingestellten Sprache (i18n.js).
+const regionNames = new Map();   // Sprache -> Intl.DisplayNames
 function countryName(code) {
   try {
-    regionNames = regionNames || new Intl.DisplayNames(['de'], { type: 'region' });
-    return regionNames.of(code.toUpperCase()) || code.toUpperCase();
+    if (!regionNames.has(LANG)) regionNames.set(LANG, new Intl.DisplayNames([LOCALE], { type: 'region' }));
+    return regionNames.get(LANG).of(code.toUpperCase()) || code.toUpperCase();
   } catch { return code.toUpperCase(); }
 }
 
@@ -174,7 +173,7 @@ const DEFAULT_IDS = [
 const DEFAULT_SETTINGS = {
   selected: DEFAULT_IDS, custom: [], showWeather: false, showSun: true, showMoon: true, showFlags: false,
   centerNoon: false, showIss: false, tempUnit: 'c', clock: '24', showQuakes: false, quakeMinMag: 4.5,
-  showAurora: false,
+  showAurora: false, lang: DEFAULT_LANG,
 };
 
 // Wählbare Mindeststärken für die Erdbebenanzeige (Momenten-Magnitude).
@@ -227,6 +226,7 @@ async function loadSettings() {
     showQuakes: s.showQuakes === true,
     showAurora: s.showAurora === true,
     quakeMinMag: validQuakeMag(Number(s.quakeMinMag)),
+    lang: validLang(s.lang),
   };
 }
 
@@ -245,6 +245,7 @@ async function saveSettings(settings) {
     showQuakes: !!settings.showQuakes,
     showAurora: !!settings.showAurora,
     quakeMinMag: validQuakeMag(Number(settings.quakeMinMag)),
+    lang: validLang(settings.lang),
   };
   if (hasChromeStorage) await chrome.storage.sync.set(data);
   else localStorage.setItem(LS_KEY, JSON.stringify(data));

@@ -31,7 +31,7 @@ function el(tag, props = {}, children = []) {
 
 let statusTimer;
 function showSaved() {
-  statusEl.textContent = 'Gespeichert ✓';
+  statusEl.textContent = tr('opt.saved');
   statusEl.classList.add('show');
   clearTimeout(statusTimer);
   statusTimer = setTimeout(() => statusEl.classList.remove('show'), 1500);
@@ -72,7 +72,9 @@ function cityCard(city, { removable = false } = {}) {
   ]);
   card.dataset.id = city.id;
   const country = hasFlag(city.country) ? countryName(city.country) : '';
-  card.dataset.search = `${city.name} ${city.tz} ${city.region || ''} ${country}`.toLowerCase();
+  // ID mitsuchen, damit auch frühere (deutsche) Namen wie „Moskau“ gefunden werden.
+  const region = city.region ? regionName(city.region) : '';
+  card.dataset.search = `${city.name} ${city.id} ${city.tz} ${region} ${country}`.toLowerCase();
 
   cb.addEventListener('change', () => {
     setSelected(city.id, cb.checked);
@@ -82,8 +84,8 @@ function cityCard(city, { removable = false } = {}) {
   });
 
   if (removable) {
-    const btn = el('button', { type: 'button', className: 'remove', textContent: '×', title: 'Entfernen' });
-    btn.setAttribute('aria-label', `${city.name} entfernen`);
+    const btn = el('button', { type: 'button', className: 'remove', textContent: '×', title: tr('opt.remove') });
+    btn.setAttribute('aria-label', tr('opt.removeCity', { name: city.name }));
     btn.addEventListener('click', e => {
       e.preventDefault();
       settings.custom = settings.custom.filter(c => c.id !== city.id);
@@ -103,14 +105,14 @@ function renderRegions() {
     const cities = CATALOG.filter(c => c.region === region);
     const grid = el('div', { className: 'grid' }, cities.map(c => cityCard(c)));
 
-    const allBtn = el('button', { type: 'button', className: 'link', textContent: 'alle' });
-    const noneBtn = el('button', { type: 'button', className: 'link', textContent: 'keine' });
+    const allBtn = el('button', { type: 'button', className: 'link', textContent: tr('opt.regionAll') });
+    const noneBtn = el('button', { type: 'button', className: 'link', textContent: tr('opt.regionNone') });
     allBtn.addEventListener('click', () => bulk(grid, true));
     noneBtn.addEventListener('click', () => bulk(grid, false));
 
     const section = el('section', { className: 'region' }, [
       el('div', { className: 'region-head' }, [
-        el('h2', { textContent: region }),
+        el('h2', { textContent: regionName(region) }),
         el('span', { className: 'rcount' }),
         allBtn, noneBtn,
       ]),
@@ -118,7 +120,7 @@ function renderRegions() {
     ]);
     regionsEl.append(section);
   }
-  regionsEl.append(el('p', { className: 'empty-search', id: 'emptySearch', hidden: true, textContent: 'Keine Stadt gefunden.' }));
+  regionsEl.append(el('p', { className: 'empty-search', id: 'emptySearch', hidden: true, textContent: tr('opt.emptySearch') }));
 }
 
 function renderCustom() {
@@ -144,7 +146,7 @@ function bulk(container, on) {
 function updateCounts() {
   const known = new Set([...CATALOG, ...settings.custom].map(c => c.id));
   const n = settings.selected.filter(id => known.has(id)).length;
-  countEl.textContent = `${n} von ${known.size} ausgewählt`;
+  countEl.textContent = tr('opt.count', { n, total: known.size });
 
   regionsEl.querySelectorAll('.region').forEach(sec => {
     const cards = sec.querySelectorAll('.city');
@@ -182,7 +184,7 @@ function fillCountryList() {
   const select = formEl.elements.country;
   const countries = [...FLAG_CODES]
     .map(code => ({ code, name: countryName(code) }))
-    .sort((a, b) => a.name.localeCompare(b.name, 'de'));
+    .sort((a, b) => a.name.localeCompare(b.name, LOCALE));
   countries.forEach(c => select.append(el('option', { value: c.code, textContent: c.name })));
 }
 
@@ -195,10 +197,10 @@ formEl.addEventListener('submit', e => {
   const lon = parseFloat(String(f.get('lon')).replace(',', '.'));
 
   let err = '';
-  if (!name) err = 'Bitte einen Namen eingeben.';
-  else if (!isValidTimeZone(tz)) err = `„${tz}“ ist keine gültige Zeitzone (Format z. B. Europe/Berlin).`;
-  else if (!(lat >= -90 && lat <= 90)) err = 'Der Breitengrad muss zwischen −90 und 90 liegen.';
-  else if (!(lon >= -180 && lon <= 180)) err = 'Der Längengrad muss zwischen −180 und 180 liegen.';
+  if (!name) err = tr('err.name');
+  else if (!isValidTimeZone(tz)) err = tr('err.tz', { tz });
+  else if (!(lat >= -90 && lat <= 90)) err = tr('err.lat');
+  else if (!(lon >= -180 && lon <= 180)) err = tr('err.lon');
   formErrorEl.textContent = err;
   if (err) return;
 
@@ -219,7 +221,7 @@ searchEl.addEventListener('input', applySearch);
 document.getElementById('selectAll').addEventListener('click', () => bulk(document, true));
 document.getElementById('selectNone').addEventListener('click', () => bulk(document, false));
 document.getElementById('reset').addEventListener('click', () => {
-  if (!confirm('Auswahl auf die Standardstädte zurücksetzen? Eigene Städte bleiben erhalten, werden aber abgewählt.')) return;
+  if (!confirm(tr('opt.confirmReset'))) return;
   settings.selected = [...DEFAULT_IDS];
   renderAll();
   persist();
@@ -261,18 +263,18 @@ function renderThemeList() {
   themeListEl.textContent = '';
   const custom = {
     id: CUSTOM_THEME_ID,
-    name: 'Eigenes Theme',
+    name: themeName(CUSTOM_THEME_ID),
     colors: themeState.customTheme || resolveTheme(themeState),
   };
   for (const t of [...THEMES, custom]) {
     const on = themeState.theme === t.id;
     const card = el('button', { type: 'button', className: 'theme-card' + (on ? ' on' : '') }, [
       themePreview(t.colors),
-      el('span', { className: 'theme-name', textContent: t.name }),
+      el('span', { className: 'theme-name', textContent: t.name || themeName(t.id) }),
     ]);
     if (t.id === CUSTOM_THEME_ID) {
       card.classList.add('custom');
-      card.querySelector('.theme-name').append(el('span', { className: 'badge', textContent: 'anpassbar' }));
+      card.querySelector('.theme-name').append(el('span', { className: 'badge', textContent: tr('opt.customizable') }));
     }
     card.dataset.id = t.id;
     card.setAttribute('role', 'radio');
@@ -317,8 +319,8 @@ function customThemeChanged() {
 
 function buildEditor() {
   copyFromEl.append(
-    el('option', { value: '', textContent: '– Theme wählen –' }),
-    ...THEMES.map(t => el('option', { value: t.id, textContent: t.name })),
+    el('option', { value: '', textContent: tr('opt.chooseTheme') }),
+    ...THEMES.map(theme => el('option', { value: theme.id, textContent: themeName(theme.id) })),
   );
   copyFromEl.addEventListener('change', () => {
     if (!copyFromEl.value) return;
@@ -331,15 +333,16 @@ function buildEditor() {
   for (const f of THEME_FIELDS) {
     if (f.group !== group) {
       group = f.group;
-      groupEl = el('fieldset', { className: 'field-group' }, [el('legend', { textContent: group })]);
+      groupEl = el('fieldset', { className: 'field-group' }, [el('legend', { textContent: tr('group.' + group) })]);
       editorFieldsEl.append(groupEl);
     }
     const picker = el('input', { type: 'color' });
-    picker.setAttribute('aria-label', f.label);
+    const label = tr('field.' + f.key);
+    picker.setAttribute('aria-label', label);
     picker.addEventListener('input', () => setCustomValue(f.key, picker.value));
 
     const hex = el('input', { type: 'text', className: 'hex', maxLength: 7, spellcheck: false });
-    hex.setAttribute('aria-label', `${f.label} (Hex-Wert)`);
+    hex.setAttribute('aria-label', tr('opt.hexValue', { label }));
     hex.addEventListener('change', () => {
       let v = hex.value.trim().toLowerCase();
       if (!v.startsWith('#')) v = '#' + v;
@@ -349,18 +352,18 @@ function buildEditor() {
 
     groupEl.append(el('div', { className: 'field' }, [
       el('label', { className: 'swatch' }, [picker]),
-      el('span', { className: 'field-label', textContent: f.label }),
+      el('span', { className: 'field-label', textContent: label }),
       hex,
     ]));
     colorInputs.set(f.key, { picker, hex });
 
     if (f.key === 'night') {
       nightInput = el('input', { type: 'range', min: 0, max: 95, step: 5 });
-      nightInput.setAttribute('aria-label', 'Nachtintensität');
+      nightInput.setAttribute('aria-label', tr('opt.nightIntensity'));
       nightValue = el('span', { className: 'range-value' });
       nightInput.addEventListener('input', () => setCustomValue('nightAlpha', nightInput.value / 100));
       groupEl.append(el('div', { className: 'field range' }, [
-        el('span', { className: 'field-label', textContent: 'Nachtintensität' }),
+        el('span', { className: 'field-label', textContent: tr('opt.nightIntensity') }),
         nightInput,
         nightValue,
       ]));
@@ -387,13 +390,26 @@ function renderEditor() {
 // ---------- Start ----------
 
 (async function init() {
-  themeState = await loadThemeState();
+  applyI18n();
+  [themeState, settings] = await Promise.all([loadThemeState(), loadSettings()]);
+  // Die Sprache steht erst nach dem Laden fest (der localStorage-Cache kann abweichen).
+  if (settings.lang !== LANG) { setLanguage(settings.lang); applyI18n(); }
+
   applyThemeCss(resolveTheme(themeState));
   buildEditor();
   renderThemeList();
   renderEditor();
 
-  settings = await loadSettings();
+  // Sprachwechsel: speichern und die Seite neu aufbauen; offene Tabs übernehmen ihn live.
+  const langEl = document.getElementById('lang');
+  for (const l of LANGUAGES) langEl.append(el('option', { value: l.code, textContent: l.name, lang: l.code }));
+  langEl.value = settings.lang;
+  langEl.addEventListener('change', async () => {
+    settings.lang = langEl.value;
+    setLanguage(settings.lang);
+    await persist();
+    location.reload();
+  });
 
   const quakeMagEl = document.getElementById('quakeMinMag');
   const syncQuakeRow = () => {
@@ -412,8 +428,8 @@ function renderEditor() {
   }
 
   for (const m of QUAKE_MAGNITUDES) {
-    const label = m.toFixed(1).replace('.', ',');
-    quakeMagEl.append(el('option', { value: String(m), textContent: `ab ${label}` }));
+    const label = formatNumber(m, 1);
+    quakeMagEl.append(el('option', { value: String(m), textContent: tr('opt.magFrom', { m: label }) }));
   }
   quakeMagEl.value = String(settings.quakeMinMag);
   quakeMagEl.addEventListener('change', () => {

@@ -1,5 +1,7 @@
 # Weltzeit-Karte
 
+*English version: [README_en.md](README_en.md)*
+
 Browser-Erweiterung (Manifest V3) für Chrome und Firefox, die die Seite „Neuer Tab“ durch eine Weltkarte ersetzt. Die Karte zeigt die Tag-/Nacht-Grenze, den Sonnen- und Mondstand und die aktuellen Uhrzeiten ausgewählter Städte und aller UTC-Zeitzonen.
 
 ![Neuer Tab mit Weltkarte, Tag/Nacht-Grenze und Städte-Uhrzeiten](docs/screenshot_1.png)
@@ -28,6 +30,7 @@ Browser-Erweiterung (Manifest V3) für Chrome und Firefox, die die Seite „Neue
   - Sonne, Mond, ISS, Erdbeben (mit Mindeststärke), Polarlichter, „Mittag in der Mitte“, Landesflaggen und Wetteranzeige einzeln ein- und ausschalten (Sonne und Mond sind standardmäßig an)
   - Uhrzeitformat: 24 Stunden (Standard) oder 12 Stunden mit AM/PM; gilt für Kopfzeile, Städte, Zeitzonenleiste und Sonnenzeiten
   - Temperatureinheit: °C (Standard) oder °F
+  - Sprache: Deutsch (Standard), Englisch, Französisch, Italienisch oder Schwedisch; gilt für alle Texte auf Karte und Einstellungsseite, offene Tabs wechseln sofort. Ortsnamen stehen unabhängig davon in der jeweiligen Landessprache (z. B. „Lisboa“, „København“, „Ciudad de México“), bei nicht-lateinischer Schrift auf Englisch (z. B. „Tokyo“, „Moscow“, „Cairo“). Ländernamen, Datum und Wochentage folgen der gewählten Sprache.
   - Suche nach Stadt, Land oder Zeitzone
   - „Alle auswählen“, „Keine“ und „Standard“, auch einzeln pro Region
   - Eigene Städte mit Name, IANA-Zeitzone (z. B. `Europe/Berlin`), Land (optional, für die Flagge) und Koordinaten anlegen
@@ -80,13 +83,17 @@ Die Add-on-ID `weltzeit-karte@plattsnacker` ist im Manifest fest eingetragen. Oh
 
 | Berechtigung | Zweck |
 | --- | --- |
-| `storage` | Speichert die Städteauswahl, eigene Städte und Einstellungen in `chrome.storage.sync`. Mit aktivierter Chrome- bzw. Firefox-Synchronisierung sind sie auf allen deinen Geräten verfügbar. Wetterdaten und ISS-Bahndaten werden in `chrome.storage.local` zwischengespeichert. |
+| `storage` | Speichert die Städteauswahl, eigene Städte und Einstellungen in `chrome.storage.sync`. Mit aktivierter Chrome- bzw. Firefox-Synchronisierung sind sie auf allen deinen Geräten verfügbar. Wetterdaten, ISS-Bahndaten, Erdbebendaten und die Polarlicht-Vorhersage werden in `chrome.storage.local` zwischengespeichert. |
 
-Kartendaten, Städtekatalog und Berechnungen sind vollständig lokal. Solange Wetter- und ISS-Anzeige ausgeschaltet sind (Standard), lädt die Erweiterung nichts aus dem Internet und sendet keine Daten.
+Kartendaten, Städtekatalog und Berechnungen sind vollständig lokal. Solange Wetter, ISS, Erdbeben und Polarlichter ausgeschaltet sind (Standard), lädt die Erweiterung nichts aus dem Internet und sendet keine Daten.
 
 Mit eingeschalteter Wetteranzeige werden die Koordinaten der ausgewählten Städte (auf zwei Nachkommastellen gerundet) an die freie Wetter-API von [Open-Meteo](https://open-meteo.com/) gesendet. Es werden weder dein eigener Standort noch andere persönliche Daten übertragen, und es ist kein API-Schlüssel nötig. Die Ergebnisse werden 15 Minuten lang zwischengespeichert, damit nicht jeder neue Tab eine Anfrage auslöst. Die kostenlose Nutzung von Open-Meteo ist auf nicht-kommerzielle Zwecke beschränkt.
 
 Mit eingeschalteter ISS-Anzeige lädt die Erweiterung höchstens alle 6 Stunden die aktuellen Bahnelemente (TLE) der ISS von [CelesTrak](https://celestrak.org/). Die Anfrage ist für alle Nutzer gleich und enthält keine Daten über dich oder deine Städte. Die Position der ISS wird daraus lokal berechnet.
+
+Mit eingeschalteter Erdbebenanzeige lädt die Erweiterung höchstens alle 10 Minuten die Liste der Erdbeben der letzten 24 Stunden vom [USGS](https://earthquake.usgs.gov/earthquakes/feed/). Je nach gewählter Mindeststärke wird einer der öffentlichen Feeds abgefragt. Die Anfrage ist für alle Nutzer gleich und enthält keine Daten über dich oder deine Städte.
+
+Mit eingeschalteter Polarlicht-Anzeige lädt die Erweiterung höchstens alle 10 Minuten die aktuelle Vorhersage vom [NOAA Space Weather Prediction Center](https://www.swpc.noaa.gov/products/aurora-30-minute-forecast). Auch diese Anfrage ist für alle Nutzer gleich und enthält keine Daten über dich oder deine Städte.
 
 ## Projektstruktur
 
@@ -100,6 +107,7 @@ weltkarte/
 ├── options.html               Einstellungsseite
 ├── options.js                 Städteauswahl, Suche, eigene Städte
 ├── options.css                Styles für die Einstellungsseite
+├── i18n.js                    Übersetzungen (de, en, fr, it, sv) und Hilfsfunktionen für die Sprachumschaltung
 ├── cities.js                  Gemeinsam genutzt: Städtekatalog, Standardauswahl, Speicherzugriff, Flaggen-Hilfen
 ├── weather.js                 Wetterdaten von Open-Meteo laden und cachen, Wettersymbole zeichnen
 ├── iss.js                     ISS-Bahnelemente von CelesTrak laden und cachen, Position und Bahnspur berechnen
@@ -119,6 +127,7 @@ weltkarte/
 - **Wetter**: Alle Städte werden in einer einzigen Sammelanfrage an Open-Meteo abgefragt (`current=temperature_2m,weather_code,is_day`). Die WMO-Wettercodes werden auf sieben Symboltypen abgebildet, die direkt auf das Canvas gezeichnet werden. Open-Meteo erlaubt Anfragen von jeder Herkunft (CORS), deshalb braucht die Erweiterung keine zusätzliche Host-Berechtigung.
 - **Mond**: Position und Phase werden mit den Hauptstörungstermen der Mondbahn (nach Meeus) berechnet, genau auf etwa ein Grad. Die Phase ergibt sich aus der Elongation zwischen Mond und Sonne.
 - **ISS**: Aus den Bahnelementen (Two-Line Elements) wird die Position lokal berechnet: Kepler-Bahn mit den säkularen Störungen durch die Erdabplattung (J2) und dem Bahnabfall durch die Restatmosphäre, Umrechnung in geografische Koordinaten über die Sternzeit und das WGS84-Ellipsoid. Mit frischen Bahnelementen liegt die Abweichung zu einer vollständigen SGP4-Rechnung bei wenigen bis einigen zehn Kilometern, auf der Karte weniger als ein Pixel bis wenige Pixel. CelesTrak erlaubt Anfragen von jeder Herkunft (CORS), eine Host-Berechtigung ist nicht nötig.
+- **Sprachen**: Alle Texte stehen in `i18n.js` (Objekt `STRINGS`, je Sprache ein Block mit denselben Schlüsseln). Statische Texte in den HTML-Seiten tragen `data-i18n`-Attribute, dynamische Texte holt der Code über `tr(key, params)`. Fehlt ein Schlüssel, wird Deutsch verwendet. Datum, Wochentage, Dezimaltrennzeichen und Ländernamen kommen über `Intl` passend zur Sprache.
 - **Zeitzonen**: Alle Uhrzeiten kommen über `Intl.DateTimeFormat` aus der Zeitzonendatenbank des Browsers. Sommerzeit wird dadurch automatisch berücksichtigt.
 - **Lokales Testen**: `newtab.html` und `options.html` lassen sich auch über einen einfachen lokalen Webserver ohne Erweiterungskontext öffnen. Die Einstellungen landen dann im `localStorage`. Ein direkter Aufruf über `file://` funktioniert nicht, weil der Browser dann `fetch()` für die Kartendaten blockiert.
 
@@ -136,11 +145,11 @@ Neue Städte für alle Nutzer werden in `cities.js` im Array `CATALOG_RAW` ergä
 ['Bremen', 'Europe/Berlin', 53.08, 8.80, 2, 'de'],
 ```
 
-Der Region-Index verweist auf das Array `REGIONS`, der Ländercode (ISO 3166-1 alpha-2, klein geschrieben) auf die Flagge in `flags/`. Die ID wird automatisch aus dem Namen erzeugt (z. B. `mexiko-stadt`). Soll die Stadt standardmäßig ausgewählt sein, die ID zusätzlich in `DEFAULT_IDS` eintragen.
+Den Namen in der Landessprache eintragen, bei nicht-lateinischer Schrift auf Englisch; Ortsnamen werden nicht übersetzt. Der Region-Index verweist auf das Array `REGIONS`, der Ländercode (ISO 3166-1 alpha-2, klein geschrieben) auf die Flagge in `flags/`. Die ID wird automatisch aus dem Namen erzeugt (z. B. `bremen`); ein optionales siebtes Feld legt sie ausdrücklich fest. Das ist bei umbenannten Städten nötig, damit gespeicherte Auswahlen erhalten bleiben (z. B. `Lisboa` mit der ID `lissabon`). Soll die Stadt standardmäßig ausgewählt sein, die ID zusätzlich in `DEFAULT_IDS` eintragen.
 
 ## Version
 
-1.10.0
+1.11.0
 
 ## Lizenz
 

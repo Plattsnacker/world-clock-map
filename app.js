@@ -148,7 +148,7 @@ function renderIss(now) {
   hoverTargets.push({
     x, y, r: 12,
     title: 'ISS',
-    lines: [`${formatLatLon(pos.lat, pos.lon, 1)} · ${Math.round(pos.alt)} km Höhe`],
+    lines: [tr('iss.pos', { coords: formatLatLon(pos.lat, pos.lon, 1), alt: Math.round(pos.alt) })],
   });
 }
 
@@ -173,9 +173,9 @@ const quakeRadius = mag => Math.max(3, 3 + (mag - 2.5) * 1.6);
 
 function formatAgo(ms) {
   const mins = Math.max(0, Math.round(ms / 60000));
-  if (mins < 60) return `vor ${mins} min`;
   const h = Math.floor(mins / 60), m = mins % 60;
-  return m ? `vor ${h} h ${m} min` : `vor ${h} h`;
+  const span = mins < 60 ? `${mins} min` : m ? `${h} h ${m} min` : `${h} h`;
+  return tr('ago', { t: span });
 }
 
 // Sichtbare Beben mit Bildschirmposition; wird in render() bestimmt und von drawQuakes()
@@ -209,11 +209,12 @@ function renderQuakes(now) {
     const when = new Date(q.time);
     const lines = [];
     if (q.place) lines.push(q.place);
-    lines.push(`${formatAgo(t - q.time)}, um ${timeIn(LOCAL_TZ, when)} deiner Zeit`);
-    lines.push(`${formatLatLon(q.lat, q.lon, 2)}${q.depth != null ? ` · Tiefe ${Math.round(q.depth)} km` : ''}`);
+    lines.push(tr('quake.when', { ago: formatAgo(t - q.time), time: timeIn(LOCAL_TZ, when) }));
+    lines.push(formatLatLon(q.lat, q.lon, 2)
+      + (q.depth != null ? ` · ${tr('quake.depth', { d: Math.round(q.depth) })}` : ''));
     hoverTargets.push({
       x, y, r: Math.max(r + 2, 7),
-      title: `Erdbeben der Stärke ${q.mag.toFixed(1).replace('.', ',')}`,
+      title: tr('quake.title', { m: formatNumber(q.mag, 1) }),
       lines,
     });
   }
@@ -360,8 +361,8 @@ function auroraHoverTarget(m) {
   if (p < 3) return null;
   return {
     x: m.x, y: m.y, r: 6,
-    title: 'Polarlicht',
-    lines: [`Wahrscheinlichkeit hier: ${p} %`, `Vorhersage für ${timeIn(LOCAL_TZ, new Date(aurora.forecast))} deiner Zeit`],
+    title: tr('aurora.title'),
+    lines: [tr('aurora.here', { p }), tr('aurora.forecast', { time: timeIn(LOCAL_TZ, new Date(aurora.forecast)) })],
   };
 }
 
@@ -388,25 +389,25 @@ function flagImage(code) {
   return img.complete && img.naturalWidth ? img : null;
 }
 
-const formatDeg = (v, digits) => Math.abs(v).toFixed(digits).replace('.', ',') + '°';
+const formatDeg = (v, digits) => formatNumber(Math.abs(v), digits) + '°';
 const formatLatLon = (lat, lon, digits) =>
-  `${formatDeg(lat, digits)} ${lat >= 0 ? 'N' : 'S'}, ${formatDeg(lon, digits)} ${lon >= 0 ? 'O' : 'W'}`;
+  `${formatDeg(lat, digits)} ${tr(lat >= 0 ? 'dir.n' : 'dir.s')}, ${formatDeg(lon, digits)} ${tr(lon >= 0 ? 'dir.e' : 'dir.w')}`;
 
 // Tooltip-Zeilen einer Stadt: Koordinaten sowie Sonnenauf- und -untergang in Ortszeit.
 function cityTooltipLines(c, now) {
   const lines = [formatLatLon(c.lat, c.lon, 2)];
   const sun = sunTimes(c.lat, c.lon, c.tz, now);
   if (sun.polar === 'day') {
-    lines.push('Polartag: Die Sonne geht heute nicht unter');
+    lines.push(tr('sun.polarDay'));
   } else if (sun.polar === 'night') {
-    lines.push('Polarnacht: Die Sonne geht heute nicht auf');
+    lines.push(tr('sun.polarNight'));
   } else {
     const mins = Math.round(sun.dayMs / 60000);
-    lines.push(`Sonnenaufgang ${timeIn(c.tz, sun.rise)} · Sonnenuntergang ${timeIn(c.tz, sun.set)}`);
-    lines.push(`Tageslänge ${Math.floor(mins / 60)} h ${mins % 60} min`);
+    lines.push(tr('sun.times', { rise: timeIn(c.tz, sun.rise), set: timeIn(c.tz, sun.set) }));
+    lines.push(tr('sun.dayLength', { h: Math.floor(mins / 60), m: mins % 60 }));
   }
   const p = SHOW_AURORA ? auroraAt(aurora, c.lat, c.lon) : 0;
-  if (p > 0) lines.push(`Polarlicht-Wahrscheinlichkeit ${p} %`);
+  if (p > 0) lines.push(tr('aurora.city', { p }));
   return lines;
 }
 
@@ -435,7 +436,8 @@ let lastSlot = -1;          // letzter Zeichen-Zeitschlitz (tick)
 
 const fmtCache = new Map();
 function formatter(key, opts) {
-  if (!fmtCache.has(key)) fmtCache.set(key, new Intl.DateTimeFormat('de-DE', opts));
+  key = LOCALE + key;
+  if (!fmtCache.has(key)) fmtCache.set(key, new Intl.DateTimeFormat(LOCALE, opts));
   return fmtCache.get(key);
 }
 const timeIn = (tz, d) => formatClock(
@@ -674,11 +676,8 @@ function moonPosition(d) {
   };
 }
 
-const MOON_PHASES = [
-  'Neumond', 'Zunehmende Sichel', 'Erstes Viertel', 'Zunehmender Mond',
-  'Vollmond', 'Abnehmender Mond', 'Letztes Viertel', 'Abnehmende Sichel',
-];
-const moonPhaseName = moon => MOON_PHASES[Math.round(moon.elong / 45) % 8];
+// Acht Phasen ab Neumond (i18n.js).
+const moonPhaseName = moon => tr('moon.phases')[Math.round(moon.elong / 45) % 8];
 
 // Mondscheibe mit Phase, wie von der Nordhalbkugel gesehen (zunehmend = rechts hell).
 function drawMoon(x, y, r, moon) {
@@ -799,8 +798,8 @@ function renderLayers(now) {
       drawMoon(mx, my, 7, moon);
       hoverTargets.push({
         x: mx, y: my, r: 11,
-        title: 'Mond',
-        lines: [`${moonPhaseName(moon)} · ${Math.round(moon.illum * 100)} % beleuchtet`],
+        title: tr('moon.title'),
+        lines: [tr('moon.lit', { phase: moonPhaseName(moon), p: Math.round(moon.illum * 100) })],
       });
     }
   }
@@ -808,7 +807,7 @@ function renderLayers(now) {
   // Sonne
   if (SHOW_SUN && sun.lat <= LAT_MAX && sun.lat >= LAT_MIN) {
     const sx = projX(sun.lon), sy = projY(sun.lat);
-    hoverTargets.push({ x: sx, y: sy, r: 11, title: 'Sonne', lines: ['steht hier im Zenit'] });
+    hoverTargets.push({ x: sx, y: sy, r: 11, title: tr('sun.title'), lines: [tr('sun.zenith')] });
     const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, 22);
     g.addColorStop(0, COLORS.sunGlow);
     g.addColorStop(1, COLORS.sunGlowEnd);
@@ -1063,7 +1062,7 @@ function updateHeader(now) {
   const ss = String(now.getSeconds()).padStart(2, '0');
   const { time, period } = splitClock(`${hh}:${mm}`, CLOCK);
   elTime.innerHTML = `${time}<span class="sec">:${ss}</span>${period ? `<span class="ampm">${period}</span>` : ''}`;
-  elDate.textContent = now.toLocaleDateString('de-DE', {
+  elDate.textContent = now.toLocaleDateString(LOCALE, {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
   elZone.textContent = `${LOCAL_TZ.replace(/_/g, ' ')} · ${offsetLabel(-now.getTimezoneOffset() / 60)}`;
@@ -1088,9 +1087,11 @@ function tick() {
 }
 
 (async function init() {
+  applyI18n();
   updateHeader(new Date());
   const [map, settings, themeState] = await Promise.all([loadMap(), loadSettings(), loadThemeState()]);
   rings = map;
+  if (settings.lang !== LANG) { setLanguage(settings.lang); applyI18n(); updateHeader(new Date()); }
   CITIES = resolveCities(settings);
   SHOW_WEATHER = settings.showWeather;
   SHOW_SUN = settings.showSun;
@@ -1113,6 +1114,7 @@ function tick() {
   onThemeChanged(setTheme);
 
   onSettingsChanged(s => {
+    if (s.lang !== LANG) { setLanguage(s.lang); applyI18n(); }
     CITIES = resolveCities(s);
     SHOW_WEATHER = s.showWeather;
     SHOW_SUN = s.showSun;
