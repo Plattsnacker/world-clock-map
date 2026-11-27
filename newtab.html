@@ -3,8 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Neuer Tab</title>
+  <title data-i18n="tab.title">Neuer Tab</title>
   <link rel="stylesheet" href="style.css">
+  <script src="i18n.js"></script>
   <script src="themes.js"></script>
 </head>
 <body>
@@ -17,14 +18,14 @@
       </div>
     </div>
     <div class="legend">
-      <span><i class="dot dot-city"></i>Stadt</span>
-      <span><i class="dot dot-local"></i>Deine Zeitzone</span>
-      <span id="legendSun"><i class="dot dot-sun"></i>Sonne im Zenit</span>
-      <span id="legendMoon"><i class="dot dot-moon"></i>Mond im Zenit</span>
+      <span><i class="dot dot-city"></i><span data-i18n="legend.city">Stadt</span></span>
+      <span><i class="dot dot-local"></i><span data-i18n="legend.local">Deine Zeitzone</span></span>
+      <span id="legendSun"><i class="dot dot-sun"></i><span data-i18n="legend.sun">Sonne im Zenit</span></span>
+      <span id="legendMoon"><i class="dot dot-moon"></i><span data-i18n="legend.moon">Mond im Zenit</span></span>
       <span id="legendIss" hidden><svg class="iss-icon" viewBox="0 0 20 10" width="20" height="10" aria-hidden="true"><path class="iss-truss" d="M1 5h18"/><rect class="iss-panel" x="1" y="1" width="6" height="8" rx="0.5"/><rect class="iss-panel" x="13" y="1" width="6" height="8" rx="0.5"/><rect class="iss-body" x="8" y="3" width="4" height="4" rx="0.8"/></svg>ISS</span>
-      <span id="legendQuake" hidden><i class="dot dot-quake"></i>Erdbeben (24 h)</span>
-      <span id="legendAurora" hidden><i class="dot dot-aurora"></i>Polarlicht</span>
-      <button id="settingsBtn" class="icon-btn" title="Einstellungen" aria-label="Einstellungen">
+      <span id="legendQuake" hidden><i class="dot dot-quake"></i><span data-i18n="legend.quake">Erdbeben (24 h)</span></span>
+      <span id="legendAurora" hidden><i class="dot dot-aurora"></i><span data-i18n="legend.aurora">Polarlicht</span></span>
+      <button id="settingsBtn" class="icon-btn" title="Einstellungen" aria-label="Einstellungen" data-i18n-attr="title:settings; aria-label:settings">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="3"/>
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -35,9 +36,9 @@
 
   <main id="mapWrap" class="map-wrap">
     <div id="mapBox" class="map-box">
-      <canvas id="map" aria-label="Weltkarte mit aktuellen Uhrzeiten"></canvas>
+      <canvas id="map" aria-label="Weltkarte mit aktuellen Uhrzeiten" data-i18n-attr="aria-label:map.aria"></canvas>
       <div id="mapTooltip" class="map-tooltip" role="tooltip" hidden></div>
-      <div id="bands" class="bands" aria-label="Uhrzeit je UTC-Zeitzone"></div>
+      <div id="bands" class="bands" aria-label="Uhrzeit je UTC-Zeitzone" data-i18n-attr="aria-label:bands.aria"></div>
     </div>
   </main>
 

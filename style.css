@@ -68,7 +68,7 @@ body {
   padding-bottom: 8px;
 }
 
-.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend > span { display: inline-flex; align-items: center; gap: 6px; }
 
 .legend { align-items: center; }
 

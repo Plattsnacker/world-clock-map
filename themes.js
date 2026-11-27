@@ -4,24 +4,25 @@
 // Wird im <head> geladen, damit das zuletzt genutzte Theme ohne Aufblitzen sofort greift.
 
 // Bearbeitbare Farben eines Themes (alle als #rrggbb) plus Nacht-Intensität (0–1).
+// Beschriftungen: tr('group.<group>') und tr('field.<key>') (i18n.js); Theme-Namen: themeName().
 const THEME_FIELDS = [
-  { group: 'Karte', key: 'oceanTop',    label: 'Ozean oben' },
-  { group: 'Karte', key: 'oceanBottom', label: 'Ozean unten' },
-  { group: 'Karte', key: 'land',        label: 'Land' },
-  { group: 'Karte', key: 'border',      label: 'Ländergrenzen' },
-  { group: 'Karte', key: 'night',       label: 'Nachtschatten' },
-  { group: 'Markierungen', key: 'accent', label: 'Städte & Akzent' },
-  { group: 'Markierungen', key: 'local',  label: 'Deine Zeitzone' },
-  { group: 'Markierungen', key: 'sun',    label: 'Sonne' },
-  { group: 'Oberfläche', key: 'bg',    label: 'Hintergrund' },
-  { group: 'Oberfläche', key: 'label', label: 'Beschriftungsfeld' },
-  { group: 'Oberfläche', key: 'text',  label: 'Text' },
-  { group: 'Oberfläche', key: 'muted', label: 'Text (gedämpft)' },
+  { group: 'map',     key: 'oceanTop' },
+  { group: 'map',     key: 'oceanBottom' },
+  { group: 'map',     key: 'land' },
+  { group: 'map',     key: 'border' },
+  { group: 'map',     key: 'night' },
+  { group: 'markers', key: 'accent' },
+  { group: 'markers', key: 'local' },
+  { group: 'markers', key: 'sun' },
+  { group: 'surface', key: 'bg' },
+  { group: 'surface', key: 'label' },
+  { group: 'surface', key: 'text' },
+  { group: 'surface', key: 'muted' },
 ];
 
 const THEMES = [
   {
-    id: 'nacht', name: 'Nacht',
+    id: 'nacht',
     colors: {
       bg: '#0a0f1c', text: '#e6ebf5', muted: '#8b95ab', label: '#080c18',
       accent: '#5cc8ff', local: '#ffb04a', sun: '#ffe066',
@@ -30,7 +31,7 @@ const THEMES = [
     },
   },
   {
-    id: 'hell', name: 'Hell',
+    id: 'hell',
     colors: {
       bg: '#eef2f7', text: '#1b2433', muted: '#5d6b82', label: '#ffffff',
       accent: '#0a7fd0', local: '#d96f00', sun: '#f2b200',
@@ -39,7 +40,7 @@ const THEMES = [
     },
   },
   {
-    id: 'atlas', name: 'Atlas',
+    id: 'atlas',
     colors: {
       bg: '#f3ead8', text: '#3a2f22', muted: '#7a6a55', label: '#fbf5e8',
       accent: '#b0412e', local: '#2e6f8e', sun: '#e09a10',
@@ -48,7 +49,7 @@ const THEMES = [
     },
   },
   {
-    id: 'ozean', name: 'Ozean',
+    id: 'ozean',
     colors: {
       bg: '#031a24', text: '#e0f7fa', muted: '#7fa8b5', label: '#021018',
       accent: '#4dd0e1', local: '#ff8a65', sun: '#fff176',
@@ -57,7 +58,7 @@ const THEMES = [
     },
   },
   {
-    id: 'abendrot', name: 'Abendrot',
+    id: 'abendrot',
     colors: {
       bg: '#1a0f1f', text: '#fbe9e7', muted: '#b08fa0', label: '#140a18',
       accent: '#ff7eb6', local: '#ffb347', sun: '#ffd36e',
@@ -66,7 +67,7 @@ const THEMES = [
     },
   },
   {
-    id: 'terminal', name: 'Terminal',
+    id: 'terminal',
     colors: {
       bg: '#050a05', text: '#c8f7c5', muted: '#5f8f5c', label: '#020602',
       accent: '#39ff88', local: '#ffcc33', sun: '#ffee88',
@@ -75,7 +76,7 @@ const THEMES = [
     },
   },
   {
-    id: 'herbst', name: 'Herbst',
+    id: 'herbst',
     colors: {
       bg: '#1c120b', text: '#f5e6d3', muted: '#a88f74', label: '#140c07',
       accent: '#ff8c3a', local: '#e0574a', sun: '#ffd25e',
@@ -84,7 +85,7 @@ const THEMES = [
     },
   },
   {
-    id: 'kontrast', name: 'Hochkontrast',
+    id: 'kontrast',
     colors: {
       bg: '#000000', text: '#ffffff', muted: '#d6d6d6', label: '#000000',
       accent: '#ffff00', local: '#00ffff', sun: '#ffb000',
@@ -93,7 +94,7 @@ const THEMES = [
     },
   },
   {
-    id: 'rose', name: 'Rosé',
+    id: 'rose',
     colors: {
       bg: '#fbeef1', text: '#4a2233', muted: '#8f6474', label: '#fffafb',
       accent: '#d6336c', local: '#9b4dca', sun: '#f0a020',
@@ -102,7 +103,7 @@ const THEMES = [
     },
   },
   {
-    id: 'neon', name: 'Neon',
+    id: 'neon',
     colors: {
       bg: '#0b0614', text: '#f2eaff', muted: '#9a88c0', label: '#07030e',
       accent: '#ff2bd6', local: '#00f0ff', sun: '#faff00',
@@ -111,7 +112,7 @@ const THEMES = [
     },
   },
   {
-    id: 'gold', name: 'Golden',
+    id: 'gold',
     colors: {
       bg: '#14110a', text: '#f7ecd2', muted: '#a8996f', label: '#0e0b06',
       accent: '#e6b84a', local: '#ff9f5a', sun: '#fff3b0',
@@ -120,7 +121,7 @@ const THEMES = [
     },
   },
   {
-    id: 'wiese', name: 'Wiese',
+    id: 'wiese',
     colors: {
       bg: '#eef5e6', text: '#1f3320', muted: '#5e7558', label: '#fbfdf7',
       accent: '#2a7d34', local: '#d2462f', sun: '#f2b705',
@@ -129,6 +130,8 @@ const THEMES = [
     },
   },
 ];
+
+const themeName = id => tr('theme.' + id);
 
 const DEFAULT_THEME_ID = 'nacht';
 const CUSTOM_THEME_ID = 'custom';

@@ -3,28 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Weltzeit-Karte – Einstellungen</title>
+  <title data-i18n="opt.pageTitle">Weltzeit-Karte – Einstellungen</title>
   <link rel="stylesheet" href="options.css">
+  <script src="i18n.js"></script>
   <script src="themes.js"></script>
 </head>
 <body>
   <div class="page">
     <header class="head">
       <div>
-        <h1>Weltzeit-Karte</h1>
-        <p class="sub">Lege Farbschema und Städte für die Karte im neuen Tab fest. Änderungen werden sofort gespeichert und in offenen Tabs übernommen.</p>
+        <h1 data-i18n="app.name">Weltzeit-Karte</h1>
+        <p class="sub" data-i18n="opt.sub"></p>
       </div>
       <div id="status" class="status" role="status" aria-live="polite"></div>
     </header>
 
     <section class="section" aria-labelledby="themeTitle">
-      <h2 id="themeTitle" class="section-title">Farbschema</h2>
+      <h2 id="themeTitle" class="section-title" data-i18n="opt.theme"></h2>
       <div id="themeList" class="theme-list" role="radiogroup" aria-labelledby="themeTitle"></div>
 
       <div id="themeEditor" class="theme-editor" hidden>
         <div class="editor-head">
-          <h3>Eigenes Theme bearbeiten</h3>
-          <label class="copy-from">Farben übernehmen von
+          <h3 data-i18n="opt.editor"></h3>
+          <label class="copy-from"><span data-i18n="opt.copyFrom"></span>
             <select id="copyFrom"></select>
           </label>
         </div>
@@ -33,74 +34,81 @@
     </section>
 
     <section class="section display-section" aria-labelledby="displayTitle">
-      <h2 id="displayTitle" class="section-title">Anzeige</h2>
+      <h2 id="displayTitle" class="section-title" data-i18n="opt.display"></h2>
+      <div class="toggle choice">
+        <span>
+          <span class="toggle-label" id="langLabel" data-i18n="opt.language"></span>
+          <span class="toggle-hint" data-i18n="opt.languageHint"></span>
+        </span>
+        <select id="lang" aria-labelledby="langLabel"></select>
+      </div>
       <label class="toggle">
         <input id="showSun" type="checkbox">
         <span>
-          <span class="toggle-label">Sonne anzeigen</span>
-          <span class="toggle-hint">Markiert den Punkt, an dem die Sonne gerade im Zenit steht. Die Tag/Nacht-Grenze bleibt immer sichtbar.</span>
+          <span class="toggle-label" data-i18n="opt.showSun"></span>
+          <span class="toggle-hint" data-i18n="opt.showSunHint"></span>
         </span>
       </label>
       <label class="toggle">
         <input id="showMoon" type="checkbox">
         <span>
-          <span class="toggle-label">Mond anzeigen</span>
-          <span class="toggle-hint">Markiert den Punkt, an dem der Mond gerade im Zenit steht, und zeigt seine aktuelle Phase (Ansicht von der Nordhalbkugel).</span>
+          <span class="toggle-label" data-i18n="opt.showMoon"></span>
+          <span class="toggle-hint" data-i18n="opt.showMoonHint"></span>
         </span>
       </label>
       <label class="toggle">
         <input id="showIss" type="checkbox">
         <span>
-          <span class="toggle-label">ISS anzeigen</span>
-          <span class="toggle-hint">Zeigt die aktuelle Position der Internationalen Raumstation mit ihrer Bahnspur (ein Umlauf voraus). Die Bahndaten kommen von <a href="https://celestrak.org/" target="_blank" rel="noopener">CelesTrak</a> und werden alle 6 Stunden aktualisiert.</span>
+          <span class="toggle-label" data-i18n="opt.showIss"></span>
+          <span class="toggle-hint" data-i18n-html="opt.showIssHint"></span>
         </span>
       </label>
       <label class="toggle">
         <input id="showQuakes" type="checkbox">
         <span>
-          <span class="toggle-label">Erdbeben anzeigen</span>
-          <span class="toggle-hint">Markiert die Erdbeben der letzten 24 Stunden. Je stärker das Beben, desto größer der Kreis. Die Kreise pulsieren langsam; ältere Beben werden blasser, Beben der letzten Stunde senden zwei Wellen aus. Daten vom <a href="https://earthquake.usgs.gov/earthquakes/feed/" target="_blank" rel="noopener">USGS</a>, alle 10 Minuten aktualisiert.</span>
+          <span class="toggle-label" data-i18n="opt.showQuakes"></span>
+          <span class="toggle-hint" data-i18n-html="opt.showQuakesHint"></span>
         </span>
       </label>
       <div class="toggle choice sub-option" id="quakeMinMagRow">
         <span>
-          <span class="toggle-label" id="quakeMinMagLabel">Mindeststärke der Erdbeben</span>
-          <span class="toggle-hint">Nur Beben ab dieser Magnitude werden angezeigt. Ab 4,5 sind es weltweit meist 5 bis 20 pro Tag, ab 2,5 deutlich mehr (vor allem in den USA).</span>
+          <span class="toggle-label" id="quakeMinMagLabel" data-i18n="opt.quakeMinMag"></span>
+          <span class="toggle-hint" data-i18n="opt.quakeMinMagHint"></span>
         </span>
         <select id="quakeMinMag" aria-labelledby="quakeMinMagLabel"></select>
       </div>
       <label class="toggle">
         <input id="showAurora" type="checkbox">
         <span>
-          <span class="toggle-label">Polarlichter anzeigen</span>
-          <span class="toggle-hint">Zeigt die Vorhersage für die nächsten 30–90 Minuten, wo Polarlicht zu sehen sein könnte: grün bei geringer, über gelb bis rot bei hoher Wahrscheinlichkeit. Beim Überfahren mit der Maus erscheint die Wahrscheinlichkeit in Prozent, auch im Tooltip der Städte. Daten vom <a href="https://www.swpc.noaa.gov/products/aurora-30-minute-forecast" target="_blank" rel="noopener">NOAA Space Weather Prediction Center</a>, alle 10 Minuten aktualisiert.</span>
+          <span class="toggle-label" data-i18n="opt.showAurora"></span>
+          <span class="toggle-hint" data-i18n-html="opt.showAuroraHint"></span>
         </span>
       </label>
       <label class="toggle">
         <input id="centerNoon" type="checkbox">
         <span>
-          <span class="toggle-label">Mittag in der Mitte</span>
-          <span class="toggle-hint">Verschiebt die Karte statt der Tag/Nacht-Grenze, sodass der Ort, an dem gerade 12 Uhr mittags ist (Sonnenhöchststand), immer in der Mitte liegt. Ausgeschaltet ist die Karte fest auf Greenwich zentriert.</span>
+          <span class="toggle-label" data-i18n="opt.centerNoon"></span>
+          <span class="toggle-hint" data-i18n="opt.centerNoonHint"></span>
         </span>
       </label>
       <label class="toggle">
         <input id="showFlags" type="checkbox">
         <span>
-          <span class="toggle-label">Landesflaggen anzeigen</span>
-          <span class="toggle-hint">Zeigt links neben jedem Ortsnamen die Flagge des zugehörigen Landes.</span>
+          <span class="toggle-label" data-i18n="opt.showFlags"></span>
+          <span class="toggle-hint" data-i18n="opt.showFlagsHint"></span>
         </span>
       </label>
       <label class="toggle">
         <input id="showWeather" type="checkbox">
         <span>
-          <span class="toggle-label">Aktuelles Wetter anzeigen</span>
-          <span class="toggle-hint">Zeigt zu jeder Stadt die Temperatur und ein Wettersymbol. Daten von <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a>, alle 15 Minuten aktualisiert.</span>
+          <span class="toggle-label" data-i18n="opt.showWeather"></span>
+          <span class="toggle-hint" data-i18n-html="opt.showWeatherHint"></span>
         </span>
       </label>
       <div class="toggle choice">
         <span>
-          <span class="toggle-label" id="clockLabel">Uhrzeitformat</span>
-          <span class="toggle-hint">Gilt für die Uhr oben, die Städte, die Zeitzonenleiste und die Sonnenzeiten im Tooltip.</span>
+          <span class="toggle-label" id="clockLabel" data-i18n="opt.clock"></span>
+          <span class="toggle-hint" data-i18n="opt.clockHint"></span>
         </span>
         <span class="segmented" role="radiogroup" aria-labelledby="clockLabel">
           <label><input type="radio" name="clock" value="24"><span>24 h</span></label>
@@ -109,8 +117,8 @@
       </div>
       <div class="toggle choice">
         <span>
-          <span class="toggle-label" id="tempUnitLabel">Temperatureinheit</span>
-          <span class="toggle-hint">Einheit für die Wetteranzeige.</span>
+          <span class="toggle-label" id="tempUnitLabel" data-i18n="opt.tempUnit"></span>
+          <span class="toggle-hint" data-i18n="opt.tempUnitHint"></span>
         </span>
         <span class="segmented" role="radiogroup" aria-labelledby="tempUnitLabel">
           <label><input type="radio" name="tempUnit" value="c"><span>°C</span></label>
@@ -119,15 +127,15 @@
       </div>
     </section>
 
-    <h2 class="section-title cities-title">Städte</h2>
+    <h2 class="section-title cities-title" data-i18n="opt.cities"></h2>
 
     <div class="toolbar">
-      <input id="search" type="search" placeholder="Stadt oder Zeitzone suchen …" autocomplete="off" aria-label="Städte durchsuchen">
+      <input id="search" type="search" autocomplete="off" data-i18n-attr="placeholder:opt.search; aria-label:opt.searchAria">
       <span id="count" class="count"></span>
       <div class="actions">
-        <button id="selectAll" class="btn" type="button">Alle auswählen</button>
-        <button id="selectNone" class="btn" type="button">Keine</button>
-        <button id="reset" class="btn" type="button">Standard</button>
+        <button id="selectAll" class="btn" type="button" data-i18n="opt.selectAll"></button>
+        <button id="selectNone" class="btn" type="button" data-i18n="opt.selectNone"></button>
+        <button id="reset" class="btn" type="button" data-i18n="opt.reset"></button>
       </div>
     </div>
 
@@ -135,30 +143,30 @@
 
     <section class="region custom" aria-labelledby="customTitle">
       <div class="region-head">
-        <h2 id="customTitle">Eigene Städte</h2>
+        <h2 id="customTitle" data-i18n="opt.custom"></h2>
       </div>
       <div id="customList" class="grid"></div>
-      <p id="customEmpty" class="hint">Noch keine eigenen Städte. Fehlt dir ein Ort? Füge ihn hier mit Zeitzone und Koordinaten hinzu.</p>
+      <p id="customEmpty" class="hint" data-i18n="opt.customEmpty"></p>
 
       <form id="customForm" class="custom-form" novalidate>
-        <label>Name
-          <input name="name" type="text" required maxlength="40" placeholder="z. B. Bremen">
+        <label><span data-i18n="form.name"></span>
+          <input name="name" type="text" required maxlength="40" data-i18n-attr="placeholder:form.namePh">
         </label>
-        <label>Zeitzone
-          <input name="tz" type="text" required list="tzList" placeholder="z. B. Europe/Berlin" autocomplete="off">
+        <label><span data-i18n="form.tz"></span>
+          <input name="tz" type="text" required list="tzList" autocomplete="off" data-i18n-attr="placeholder:form.tzPh">
         </label>
-        <label>Land
+        <label><span data-i18n="form.country"></span>
           <select name="country">
-            <option value="">– ohne Flagge –</option>
+            <option value="" data-i18n="form.noFlag"></option>
           </select>
         </label>
-        <label>Breitengrad
+        <label><span data-i18n="form.lat"></span>
           <input name="lat" type="number" required step="any" min="-90" max="90" placeholder="53.08">
         </label>
-        <label>Längengrad
+        <label><span data-i18n="form.lon"></span>
           <input name="lon" type="number" required step="any" min="-180" max="180" placeholder="8.80">
         </label>
-        <button class="btn primary" type="submit">Hinzufügen</button>
+        <button class="btn primary" type="submit" data-i18n="form.add"></button>
         <p id="formError" class="form-error" role="alert"></p>
       </form>
       <datalist id="tzList"></datalist>
