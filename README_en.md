@@ -30,7 +30,7 @@ Browser extension (Manifest V3) for Chrome and Firefox that replaces the "New Ta
   - Sun, moon, ISS, earthquakes (with minimum magnitude), aurora, "Noon in the centre", country flags and weather display can each be switched on and off (sun and moon are on by default)
   - Time format: 24 hours (default) or 12 hours with AM/PM; applies to the header, cities, time zone bar and sun times
   - Temperature unit: °C (default) or °F
-  - Language: German (default), English, French, Italian or Swedish; applies to all texts on the map and the settings page, and open tabs switch immediately. Place names are always shown in the local language (e.g. "Lisboa", "København", "Ciudad de México"), or in English for non-Latin scripts (e.g. "Tokyo", "Moscow", "Cairo"). Country names, dates and weekdays follow the selected language.
+  - Language: German (default), Croatian, Danish, Dutch, English, French, Italian, Spanish or Swedish; applies to all texts on the map and the settings page, and open tabs switch immediately. Place names are always shown in the local language (e.g. "Lisboa", "København", "Ciudad de México"), or in English for non-Latin scripts (e.g. "Tokyo", "Moscow", "Cairo"). Country names, dates and weekdays follow the selected language.
   - Search by city, country or time zone
   - "Select all", "None" and "Default", also per region
   - Add custom cities with name, IANA time zone (e.g. `Europe/Berlin`), country (optional, for the flag) and coordinates
@@ -107,7 +107,7 @@ weltkarte/
 ├── options.html               Settings page
 ├── options.js                 City selection, search, custom cities
 ├── options.css                Styles for the settings page
-├── i18n.js                    Translations (de, en, fr, it, sv) and helper functions for switching languages
+├── i18n.js                    Translations (da, de, en, es, fr, hr, it, nl, sv) and helper functions for switching languages
 ├── cities.js                  Shared: city catalogue, default selection, storage access, flag helpers
 ├── weather.js                 Load and cache weather data from Open-Meteo, draw weather icons
 ├── iss.js                     Load and cache ISS orbital elements from CelesTrak, compute position and ground track
