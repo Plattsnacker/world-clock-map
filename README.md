@@ -30,7 +30,7 @@ Browser-Erweiterung (Manifest V3) für Chrome und Firefox, die die Seite „Neue
   - Sonne, Mond, ISS, Erdbeben (mit Mindeststärke), Polarlichter, „Mittag in der Mitte“, Landesflaggen und Wetteranzeige einzeln ein- und ausschalten (Sonne und Mond sind standardmäßig an)
   - Uhrzeitformat: 24 Stunden (Standard) oder 12 Stunden mit AM/PM; gilt für Kopfzeile, Städte, Zeitzonenleiste und Sonnenzeiten
   - Temperatureinheit: °C (Standard) oder °F
-  - Sprache: Deutsch (Standard), Englisch, Französisch, Italienisch oder Schwedisch; gilt für alle Texte auf Karte und Einstellungsseite, offene Tabs wechseln sofort. Ortsnamen stehen unabhängig davon in der jeweiligen Landessprache (z. B. „Lisboa“, „København“, „Ciudad de México“), bei nicht-lateinischer Schrift auf Englisch (z. B. „Tokyo“, „Moscow“, „Cairo“). Ländernamen, Datum und Wochentage folgen der gewählten Sprache.
+  - Sprache: Deutsch (Standard), Dänisch, Englisch, Französisch, Italienisch, Kroatisch, Niederländisch, Schwedisch oder Spanisch; gilt für alle Texte auf Karte und Einstellungsseite, offene Tabs wechseln sofort. Ortsnamen stehen unabhängig davon in der jeweiligen Landessprache (z. B. „Lisboa“, „København“, „Ciudad de México“), bei nicht-lateinischer Schrift auf Englisch (z. B. „Tokyo“, „Moscow“, „Cairo“). Ländernamen, Datum und Wochentage folgen der gewählten Sprache.
   - Suche nach Stadt, Land oder Zeitzone
   - „Alle auswählen“, „Keine“ und „Standard“, auch einzeln pro Region
   - Eigene Städte mit Name, IANA-Zeitzone (z. B. `Europe/Berlin`), Land (optional, für die Flagge) und Koordinaten anlegen
@@ -107,7 +107,7 @@ weltkarte/
 ├── options.html               Einstellungsseite
 ├── options.js                 Städteauswahl, Suche, eigene Städte
 ├── options.css                Styles für die Einstellungsseite
-├── i18n.js                    Übersetzungen (de, en, fr, it, sv) und Hilfsfunktionen für die Sprachumschaltung
+├── i18n.js                    Übersetzungen (da, de, en, es, fr, hr, it, nl, sv) und Hilfsfunktionen für die Sprachumschaltung
 ├── cities.js                  Gemeinsam genutzt: Städtekatalog, Standardauswahl, Speicherzugriff, Flaggen-Hilfen
 ├── weather.js                 Wetterdaten von Open-Meteo laden und cachen, Wettersymbole zeichnen
 ├── iss.js                     ISS-Bahnelemente von CelesTrak laden und cachen, Position und Bahnspur berechnen
