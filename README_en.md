@@ -149,7 +149,7 @@ Enter the name in the local language, or in English for non-Latin scripts; place
 
 ## Version
 
-1.11.0
+1.11.1
 
 ## Licence
 
