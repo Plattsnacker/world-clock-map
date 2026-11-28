@@ -681,8 +681,17 @@ function formatter(key, opts) {
 }
 const timeIn = (tz, d) => formatClock(
   formatter('t' + tz, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: tz }).format(d), CLOCK);
-const weekdayIn = (tz, d) =>
-  formatter('w' + tz, { weekday: 'short', timeZone: tz }).format(d).replace('.', '');
+// Wochentag 0 (So) … 6 (Sa) in einer Zeitzone.
+const weekdayFmt = new Map();
+function weekdayIndexIn(tz, d) {
+  if (!weekdayFmt.has(tz)) weekdayFmt.set(tz, new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: tz }));
+  return WEEKDAY_INDEX[weekdayFmt.get(tz).format(d)];
+}
+const weekdayIn = (tz, d) => {
+  const own = ownDateNames();
+  if (own) return own.weekdaysShort[weekdayIndexIn(tz, d)];
+  return formatter('w' + tz, { weekday: 'short', timeZone: tz }).format(d).replace('.', '');
+};
 const dayKeyIn = (tz, d) =>
   new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: tz }).format(d);
 
@@ -1316,9 +1325,10 @@ function updateHeader(now) {
   const ss = String(now.getSeconds()).padStart(2, '0');
   const { time, period } = splitClock(`${hh}:${mm}`, CLOCK);
   elTime.innerHTML = `${time}<span class="sec">:${ss}</span>${period ? `<span class="ampm">${period}</span>` : ''}`;
-  elDate.textContent = now.toLocaleDateString(LOCALE, {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-  });
+  const own = ownDateNames();
+  elDate.textContent = own
+    ? `${own.weekdays[now.getDay()]}, ${now.getDate()}. ${own.months[now.getMonth()]} ${now.getFullYear()}`
+    : now.toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   elZone.textContent = `${LOCAL_TZ.replace(/_/g, ' ')} · ${offsetLabel(-now.getTimezoneOffset() / 60)}`;
 }
 
