@@ -33,7 +33,7 @@ Browser extension (Manifest V3) for Chrome and Firefox that replaces the "New Ta
   - Sun, moon, ISS, earthquakes (with minimum magnitude), aurora, tropical cyclones, "Noon in the centre", grid, country flags, working hours and weather display can each be switched on and off (sun and moon are on by default)
   - Time format: 24 hours (default) or 12 hours with AM/PM; applies to the header, cities, time zone bar and sun times
   - Temperature unit: °C (default) or °F
-  - Language: German (default), Croatian, Danish, Dutch, English, French, Italian, Spanish or Swedish; applies to all texts on the map and the settings page, and open tabs switch immediately. Place names are always shown in the local language (e.g. "Lisboa", "København", "Ciudad de México"), or in English for non-Latin scripts (e.g. "Tokyo", "Moscow", "Cairo"). Country names, dates and weekdays follow the selected language.
+  - Language: German (default), Croatian, Danish, Dutch, English, French, Italian, Low German, Spanish or Swedish; applies to all texts on the map and the settings page, and open tabs switch immediately. Place names are always shown in the local language (e.g. "Lisboa", "København", "Ciudad de México"), or in English for non-Latin scripts (e.g. "Tokyo", "Moscow", "Cairo"). Country names, dates and weekdays follow the selected language (with Low German, country names are in standard German).
   - Search by city, country or time zone
   - "Select all", "None" and "Default", also per region
   - Add custom cities with name, IANA time zone (e.g. `Europe/Berlin`), country (optional, for the flag) and coordinates
@@ -112,7 +112,7 @@ weltkarte/
 ├── options.html               Settings page
 ├── options.js                 City selection, search, custom cities
 ├── options.css                Styles for the settings page
-├── i18n.js                    Translations (da, de, en, es, fr, hr, it, nl, sv) and helper functions for switching languages
+├── i18n.js                    Translations (da, de, en, es, fr, hr, it, nds, nl, sv) and helper functions for switching languages
 ├── cities.js                  Shared: city catalogue, default selection, storage access, flag helpers
 ├── weather.js                 Load and cache weather data from Open-Meteo, draw weather icons
 ├── iss.js                     Load and cache ISS orbital elements from CelesTrak, compute position and ground track
@@ -133,7 +133,7 @@ weltkarte/
 - **Weather**: All cities are queried in a single batch request to Open-Meteo (`current=temperature_2m,weather_code,is_day`). The WMO weather codes are mapped to seven icon types, which are drawn directly onto the canvas. Open-Meteo allows requests from any origin (CORS), so the extension does not need an additional host permission.
 - **Moon**: Position and phase are calculated using the main perturbation terms of the lunar orbit (after Meeus), accurate to about one degree. The phase results from the elongation between moon and sun.
 - **ISS**: The position is calculated locally from the orbital elements (two-line elements): a Kepler orbit with the secular perturbations caused by the Earth's oblateness (J2) and the orbital decay caused by the residual atmosphere, converted to geographic coordinates via sidereal time and the WGS84 ellipsoid. With fresh orbital elements, the deviation from a full SGP4 calculation is a few to a few tens of kilometres, i.e. less than one pixel to a few pixels on the map. CelesTrak allows requests from any origin (CORS); no host permission is needed.
-- **Languages**: All texts live in `i18n.js` (object `STRINGS`, one block per language with the same keys). Static texts in the HTML pages carry `data-i18n` attributes; dynamic texts are fetched in code via `tr(key, params)`. If a key is missing, German is used. Dates, weekdays, decimal separators and country names come from `Intl` according to the language.
+- **Languages**: All texts live in `i18n.js` (object `STRINGS`, one block per language with the same keys). Static texts in the HTML pages carry `data-i18n` attributes; dynamic texts are fetched in code via `tr(key, params)`. If a key is missing, German is used. Dates, weekdays, decimal separators and country names come from `Intl` according to the language. The exception is Low German (`nds`): browsers do not support it and would fall back to their own language. It therefore uses `de-DE` as its locale, and weekdays and months are defined in `STRINGS.nds` (`date.weekdays`, `date.weekdaysShort`, `date.months`).
 - **Time zones**: All times come from the browser's time zone database via `Intl.DateTimeFormat`. Daylight saving time is therefore taken into account automatically.
 - **Local testing**: `newtab.html` and `options.html` can also be opened via a simple local web server without an extension context. The settings are then stored in `localStorage`. Opening them directly via `file://` does not work, because the browser then blocks `fetch()` for the map data.
 
@@ -155,7 +155,7 @@ Enter the name in the local language, or in English for non-Latin scripts; place
 
 ## Version
 
-1.13.0
+1.14.0
 
 ## Licence
 

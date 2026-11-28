@@ -33,7 +33,7 @@ Browser-Erweiterung (Manifest V3) für Chrome und Firefox, die die Seite „Neue
   - Sonne, Mond, ISS, Erdbeben (mit Mindeststärke), Polarlichter, Wirbelstürme, „Mittag in der Mitte“, Gradnetz, Landesflaggen, Arbeitszeit und Wetteranzeige einzeln ein- und ausschalten (Sonne und Mond sind standardmäßig an)
   - Uhrzeitformat: 24 Stunden (Standard) oder 12 Stunden mit AM/PM; gilt für Kopfzeile, Städte, Zeitzonenleiste und Sonnenzeiten
   - Temperatureinheit: °C (Standard) oder °F
-  - Sprache: Deutsch (Standard), Dänisch, Englisch, Französisch, Italienisch, Kroatisch, Niederländisch, Schwedisch oder Spanisch; gilt für alle Texte auf Karte und Einstellungsseite, offene Tabs wechseln sofort. Ortsnamen stehen unabhängig davon in der jeweiligen Landessprache (z. B. „Lisboa“, „København“, „Ciudad de México“), bei nicht-lateinischer Schrift auf Englisch (z. B. „Tokyo“, „Moscow“, „Cairo“). Ländernamen, Datum und Wochentage folgen der gewählten Sprache.
+  - Sprache: Deutsch (Standard), Dänisch, Englisch, Französisch, Italienisch, Kroatisch, Niederländisch, Plattdeutsch, Schwedisch oder Spanisch; gilt für alle Texte auf Karte und Einstellungsseite, offene Tabs wechseln sofort. Ortsnamen stehen unabhängig davon in der jeweiligen Landessprache (z. B. „Lisboa“, „København“, „Ciudad de México“), bei nicht-lateinischer Schrift auf Englisch (z. B. „Tokyo“, „Moscow“, „Cairo“). Ländernamen, Datum und Wochentage folgen der gewählten Sprache (bei Plattdeutsch stehen Ländernamen auf Hochdeutsch).
   - Suche nach Stadt, Land oder Zeitzone
   - „Alle auswählen“, „Keine“ und „Standard“, auch einzeln pro Region
   - Eigene Städte mit Name, IANA-Zeitzone (z. B. `Europe/Berlin`), Land (optional, für die Flagge) und Koordinaten anlegen
@@ -112,7 +112,7 @@ weltkarte/
 ├── options.html               Einstellungsseite
 ├── options.js                 Städteauswahl, Suche, eigene Städte
 ├── options.css                Styles für die Einstellungsseite
-├── i18n.js                    Übersetzungen (da, de, en, es, fr, hr, it, nl, sv) und Hilfsfunktionen für die Sprachumschaltung
+├── i18n.js                    Übersetzungen (da, de, en, es, fr, hr, it, nds, nl, sv) und Hilfsfunktionen für die Sprachumschaltung
 ├── cities.js                  Gemeinsam genutzt: Städtekatalog, Standardauswahl, Speicherzugriff, Flaggen-Hilfen
 ├── weather.js                 Wetterdaten von Open-Meteo laden und cachen, Wettersymbole zeichnen
 ├── iss.js                     ISS-Bahnelemente von CelesTrak laden und cachen, Position und Bahnspur berechnen
@@ -133,7 +133,7 @@ weltkarte/
 - **Wetter**: Alle Städte werden in einer einzigen Sammelanfrage an Open-Meteo abgefragt (`current=temperature_2m,weather_code,is_day`). Die WMO-Wettercodes werden auf sieben Symboltypen abgebildet, die direkt auf das Canvas gezeichnet werden. Open-Meteo erlaubt Anfragen von jeder Herkunft (CORS), deshalb braucht die Erweiterung keine zusätzliche Host-Berechtigung.
 - **Mond**: Position und Phase werden mit den Hauptstörungstermen der Mondbahn (nach Meeus) berechnet, genau auf etwa ein Grad. Die Phase ergibt sich aus der Elongation zwischen Mond und Sonne.
 - **ISS**: Aus den Bahnelementen (Two-Line Elements) wird die Position lokal berechnet: Kepler-Bahn mit den säkularen Störungen durch die Erdabplattung (J2) und dem Bahnabfall durch die Restatmosphäre, Umrechnung in geografische Koordinaten über die Sternzeit und das WGS84-Ellipsoid. Mit frischen Bahnelementen liegt die Abweichung zu einer vollständigen SGP4-Rechnung bei wenigen bis einigen zehn Kilometern, auf der Karte weniger als ein Pixel bis wenige Pixel. CelesTrak erlaubt Anfragen von jeder Herkunft (CORS), eine Host-Berechtigung ist nicht nötig.
-- **Sprachen**: Alle Texte stehen in `i18n.js` (Objekt `STRINGS`, je Sprache ein Block mit denselben Schlüsseln). Statische Texte in den HTML-Seiten tragen `data-i18n`-Attribute, dynamische Texte holt der Code über `tr(key, params)`. Fehlt ein Schlüssel, wird Deutsch verwendet. Datum, Wochentage, Dezimaltrennzeichen und Ländernamen kommen über `Intl` passend zur Sprache.
+- **Sprachen**: Alle Texte stehen in `i18n.js` (Objekt `STRINGS`, je Sprache ein Block mit denselben Schlüsseln). Statische Texte in den HTML-Seiten tragen `data-i18n`-Attribute, dynamische Texte holt der Code über `tr(key, params)`. Fehlt ein Schlüssel, wird Deutsch verwendet. Datum, Wochentage, Dezimaltrennzeichen und Ländernamen kommen über `Intl` passend zur Sprache. Ausnahme Plattdeutsch (`nds`): Browser kennen es nicht und würden auf ihre eigene Sprache zurückfallen. Dafür gilt `de-DE` als Locale, Wochentage und Monate stehen in `STRINGS.nds` (`date.weekdays`, `date.weekdaysShort`, `date.months`).
 - **Zeitzonen**: Alle Uhrzeiten kommen über `Intl.DateTimeFormat` aus der Zeitzonendatenbank des Browsers. Sommerzeit wird dadurch automatisch berücksichtigt.
 - **Lokales Testen**: `newtab.html` und `options.html` lassen sich auch über einen einfachen lokalen Webserver ohne Erweiterungskontext öffnen. Die Einstellungen landen dann im `localStorage`. Ein direkter Aufruf über `file://` funktioniert nicht, weil der Browser dann `fetch()` für die Kartendaten blockiert.
 
@@ -155,7 +155,7 @@ Den Namen in der Landessprache eintragen, bei nicht-lateinischer Schrift auf Eng
 
 ## Version
 
-1.13.0
+1.14.0
 
 ## Lizenz
 
