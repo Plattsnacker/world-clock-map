@@ -150,7 +150,7 @@ Den Namen in der Landessprache eintragen, bei nicht-lateinischer Schrift auf Eng
 
 ## Version
 
-1.11.1
+1.12.0
 
 ## Lizenz
 
