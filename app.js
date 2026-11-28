@@ -18,6 +18,7 @@ let CLOCK = DEFAULT_SETTINGS.clock;
 let SHOW_QUAKES = DEFAULT_SETTINGS.showQuakes;
 let QUAKE_MIN_MAG = DEFAULT_SETTINGS.quakeMinMag;
 let SHOW_AURORA = DEFAULT_SETTINGS.showAurora;
+let SHOW_GRID = DEFAULT_SETTINGS.showGrid;
 let weather = new Map();   // weatherKey(city) -> { temp, code, day } (weather.js)
 let weatherLoadedAt = 0;
 
@@ -65,6 +66,10 @@ function canvasColors(t) {
     issTrackPast: rgba(t.text, dark ? 0.18 : 0.25),
     // Erdbeben in festem Rot, damit sie sich von Städten und eigener Zeitzone abheben.
     quake: dark ? '#ff5d4f' : '#d7362a',
+    grid: rgba(t.text, dark ? 0.07 : 0.1),
+    gridLine: rgba(t.text, dark ? 0.3 : 0.4),
+    gridLabel: rgba(t.text, dark ? 0.5 : 0.6),
+    dateLine: rgba(t.accent, 0.75),
   };
 }
 
@@ -364,6 +369,80 @@ function auroraHoverTarget(m) {
     title: tr('aurora.title'),
     lines: [tr('aurora.here', { p }), tr('aurora.forecast', { time: timeIn(LOCAL_TZ, new Date(aurora.forecast)) })],
   };
+}
+
+// ---------- Gradnetz und Linien ----------
+
+const OBLIQUITY = 23.44;   // Schiefe der Ekliptik; ändert sich nur um etwa 0,013° pro Jahrhundert
+const GRID_STEP = 30;
+const GRID_LINES = [
+  { lat: 90 - OBLIQUITY, key: 'grid.arctic' },
+  { lat: OBLIQUITY, key: 'grid.cancer' },
+  { lat: 0, key: 'grid.equator' },
+  { lat: -OBLIQUITY, key: 'grid.capricorn' },
+  // Südlicher Polarkreis (−66,56°) liegt außerhalb des Kartenausschnitts.
+];
+
+// Datumsgrenze als [Breite, Länge], vereinfacht: Sie folgt dem 180. Meridian und weicht
+// an der Beringstraße, den Aleuten, um Kiribati sowie zwischen Samoa und Amerikanisch-Samoa
+// bzw. östlich von Tonga und den Chatham-Inseln ab. Einzelne kleine Inseln liegen nicht exakt.
+const DATE_LINE = [
+  [90, 180], [75, 180], [68, -169], [65, -169], [53, 170], [48, 180],
+  [5, 180], [5, -150], [-12, -150], [-12, -171.2], [-15, -171.2], [-45, -175], [-51, 180], [-90, 180],
+];
+
+function renderGrid() {
+  if (!SHOW_GRID) return;
+  const px = v => Math.round(v) + 0.5;   // scharfe 1-px-Linien
+  ctx.save();
+  ctx.lineWidth = 1;
+
+  // Gradnetz
+  ctx.strokeStyle = COLORS.grid;
+  ctx.beginPath();
+  for (let lon = -180; lon < 180; lon += GRID_STEP) {
+    const x = px(projX(lon));
+    ctx.moveTo(x, 0); ctx.lineTo(x, cssH);
+  }
+  for (let lat = LAT_MIN + GRID_STEP; lat < LAT_MAX; lat += GRID_STEP) {
+    if (lat === 0) continue;   // der Äquator wird unten hervorgehoben gezeichnet
+    const y = px(projY(lat));
+    ctx.moveTo(0, y); ctx.lineTo(cssW, y);
+  }
+  ctx.stroke();
+
+  // Äquator, Wendekreise, Polarkreis mit Beschriftung am linken Rand
+  ctx.font = '10px "Segoe UI", system-ui, sans-serif';
+  ctx.textBaseline = 'bottom';
+  ctx.textAlign = 'left';
+  for (const { lat, key } of GRID_LINES) {
+    const y = px(projY(lat));
+    ctx.strokeStyle = COLORS.gridLine;
+    ctx.setLineDash(lat === 0 ? [] : [6, 4]);
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cssW, y); ctx.stroke();
+    ctx.fillStyle = COLORS.gridLabel;
+    ctx.fillText(tr(key), 6, y - 2);
+  }
+
+  // Datumsgrenze: Längen um 180° stetig machen und an beiden Kartenrändern umgebrochen zeichnen.
+  const x180 = projX(180);
+  const pts = DATE_LINE.map(([lat, lon]) => [x180 + ((lon < 0 ? lon + 360 : lon) - 180) / 360 * cssW, projY(lat)]);
+  ctx.strokeStyle = COLORS.dateLine;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([2, 3]);
+  for (const off of [-cssW, 0, cssW]) {
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => (i ? ctx.lineTo(x + off, y) : ctx.moveTo(x + off, y)));
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  ctx.fillStyle = COLORS.dateLine;
+  ctx.textBaseline = 'top';
+  const label = tr('grid.dateline');
+  const right = x180 + 4 + ctx.measureText(label).width > cssW;
+  ctx.textAlign = right ? 'right' : 'left';
+  ctx.fillText(label, right ? x180 - 4 : x180 + 4, 4);
+  ctx.restore();
 }
 
 // ---------- Flaggen ----------
@@ -778,6 +857,7 @@ function renderLayers(now) {
   ctx.drawImage(nightLayer, 0, 0, cssW, cssH);
 
   renderAurora();
+  renderGrid();
 
   hoverTargets = [];
 
@@ -1104,6 +1184,7 @@ function tick() {
   SHOW_QUAKES = settings.showQuakes;
   QUAKE_MIN_MAG = settings.quakeMinMag;
   SHOW_AURORA = settings.showAurora;
+  SHOW_GRID = settings.showGrid;
   setTheme(themeState);
   resize();
   refreshWeather();
@@ -1127,6 +1208,7 @@ function tick() {
     SHOW_QUAKES = s.showQuakes;
     QUAKE_MIN_MAG = s.quakeMinMag;
     SHOW_AURORA = s.showAurora;
+    SHOW_GRID = s.showGrid;
     updateHeader(new Date());
     render(new Date());
     refreshWeather();   // holt nur fehlende/veraltete Städte nach (Cache)
