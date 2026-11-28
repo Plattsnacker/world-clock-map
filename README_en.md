@@ -155,7 +155,7 @@ Enter the name in the local language, or in English for non-Latin scripts; place
 
 ## Version
 
-1.12.0
+1.13.0
 
 ## Licence
 
