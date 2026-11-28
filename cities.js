@@ -173,7 +173,7 @@ const DEFAULT_IDS = [
 const DEFAULT_SETTINGS = {
   selected: DEFAULT_IDS, custom: [], showWeather: false, showSun: true, showMoon: true, showFlags: false,
   centerNoon: false, showIss: false, tempUnit: 'c', clock: '24', showQuakes: false, quakeMinMag: 4.5,
-  showAurora: false, lang: DEFAULT_LANG,
+  showAurora: false, showGrid: false, lang: DEFAULT_LANG,
 };
 
 // Wählbare Mindeststärken für die Erdbebenanzeige (Momenten-Magnitude).
@@ -225,6 +225,7 @@ async function loadSettings() {
     clock: s.clock === '12' ? '12' : '24',
     showQuakes: s.showQuakes === true,
     showAurora: s.showAurora === true,
+    showGrid: s.showGrid === true,
     quakeMinMag: validQuakeMag(Number(s.quakeMinMag)),
     lang: validLang(s.lang),
   };
@@ -244,6 +245,7 @@ async function saveSettings(settings) {
     clock: settings.clock === '12' ? '12' : '24',
     showQuakes: !!settings.showQuakes,
     showAurora: !!settings.showAurora,
+    showGrid: !!settings.showGrid,
     quakeMinMag: validQuakeMag(Number(settings.quakeMinMag)),
     lang: validLang(settings.lang),
   };
