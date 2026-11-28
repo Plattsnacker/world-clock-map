@@ -422,7 +422,7 @@ function renderEditor() {
     document.getElementById('quakeMinMagRow').classList.toggle('disabled', !settings.showQuakes);
   };
 
-  for (const key of ['showSun', 'showMoon', 'showFlags', 'showWeather', 'centerNoon', 'showIss', 'showQuakes', 'showAurora', 'showGrid']) {
+  for (const key of ['showSun', 'showMoon', 'showFlags', 'showWeather', 'centerNoon', 'showIss', 'showQuakes', 'showAurora', 'showStorms', 'showGrid', 'showWorkHours']) {
     const cb = document.getElementById(key);
     cb.checked = settings[key];
     cb.addEventListener('change', () => {

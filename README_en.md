@@ -16,10 +16,12 @@ Browser extension (Manifest V3) for Chrome and Firefox that replaces the "New Ta
 - **ISS (optional)**: Shows the current position of the International Space Station as a small icon, along with its ground track: half an orbit back (faint) and one orbit ahead (dashed). The position is updated every 10 seconds. Hovering shows a tooltip with coordinates and orbital altitude.
 - **Earthquakes (optional)**: Marks the earthquakes of the last 24 hours as red circles whose size grows with magnitude. The circles slowly "breathe", and every 4 seconds or so a faint wave runs outwards from each of them, two for quakes from the last hour. Older quakes fade. With the system setting "Reduce motion", the markers stay static. The minimum magnitude is adjustable (from 2.5 up to 6.0, default 4.5). Hovering shows a tooltip with magnitude, region, time, coordinates and focal depth. Data from the USGS, updated every 10 minutes.
 - **Aurora (optional)**: Shows the short-term forecast (30–90 minutes) of the NOAA Space Weather Prediction Center (OVATION model) of where aurora might be visible, as a softly drawn area: green for low, through yellow to red for high probability. Hovering shows a tooltip with the probability at that spot and the forecast time; a city's tooltip also mentions it if it is above 0%. Updated every 10 minutes.
+- **Tropical cyclones (optional)**: Shows active hurricanes, typhoons and cyclones worldwide with a cyclone symbol at their current position, plus the track so far (solid), the forecast (dashed) and the cone of uncertainty. The colour depends on the strength: blue tropical depression, yellow tropical storm, orange hurricane/typhoon. Hovering shows a tooltip with name, strength, maximum wind speed, position and data time. If no storm is currently active, the legend says so. Data from [GDACS](https://www.gdacs.org/), updated every 30 minutes.
 - **Grid and lines (optional)**: Shows a subtle 30° grid, plus the labelled equator, tropics, Arctic Circle and International Date Line. The date line follows a simplified course (Bering Strait, Aleutians, Kiribati, Samoa/Tonga). The Antarctic Circle lies outside the visible map area.
 - **Cities with local time**: Each selected city gets a label with its name and local time. If the city is already on a different day than you, the weekday is shown as well. Labels are placed automatically so that they overlap as little as possible, with a leader line if needed.
 - **City info in the tooltip**: Hovering over a city (dot or label) shows a tooltip with latitude and longitude as well as sunrise, sunset and day length for today, each in local time. North or south of the polar circles it may say "Polar day" or "Polar night" instead.
 - **Country flags (optional)**: The flag of the corresponding country is shown to the left of the place name. For custom cities, the country can be chosen when adding them.
+- **Working hours (optional)**: Cities where it is currently usual office time (weekdays 9 am–5 pm local time) get a green briefcase next to the time; the city tooltip says whether it is currently working hours there. In countries with a Friday–Saturday weekend (e.g. Saudi Arabia, Israel, Egypt), Sunday to Thursday count as working days, in Iran and Afghanistan Saturday to Wednesday. Public holidays are not taken into account.
 - **Current weather (optional)**: Next to each city's time, the current temperature (in °C or °F) and a small weather icon are shown (clear, partly cloudy, cloudy, fog, rain, snow, thunderstorm; with a moon at night). The icons adopt the colours of the active theme.
 - **Your own time zone highlighted**: Cities in your time zone and the matching time zone band are marked in orange.
 - **Time zone bar**: Below the map, the current time is shown for every zone from UTC−12 to UTC+12.
@@ -28,7 +30,7 @@ Browser extension (Manifest V3) for Chrome and Firefox that replaces the "New Ta
   - Twelve colour themes (Night, Light, Atlas, Ocean, Sunset, Terminal, Autumn, High contrast, Rosé, Neon, Golden, Meadow) with preview
   - Custom theme: all map and interface colours as well as the night intensity can be set freely
   - Choice of 101 cities, grouped by region (North America, Central & South America, Europe, Africa, Asia, Oceania)
-  - Sun, moon, ISS, earthquakes (with minimum magnitude), aurora, "Noon in the centre", grid, country flags and weather display can each be switched on and off (sun and moon are on by default)
+  - Sun, moon, ISS, earthquakes (with minimum magnitude), aurora, tropical cyclones, "Noon in the centre", grid, country flags, working hours and weather display can each be switched on and off (sun and moon are on by default)
   - Time format: 24 hours (default) or 12 hours with AM/PM; applies to the header, cities, time zone bar and sun times
   - Temperature unit: °C (default) or °F
   - Language: German (default), Croatian, Danish, Dutch, English, French, Italian, Spanish or Swedish; applies to all texts on the map and the settings page, and open tabs switch immediately. Place names are always shown in the local language (e.g. "Lisboa", "København", "Ciudad de México"), or in English for non-Latin scripts (e.g. "Tokyo", "Moscow", "Cairo"). Country names, dates and weekdays follow the selected language.
@@ -84,9 +86,9 @@ The add-on ID `weltzeit-karte@plattsnacker` is fixed in the manifest. Without a 
 
 | Permission | Purpose |
 | --- | --- |
-| `storage` | Stores the city selection, custom cities and settings in `chrome.storage.sync`. With Chrome or Firefox sync enabled, they are available on all your devices. Weather data, ISS orbital data, earthquake data and the aurora forecast are cached in `chrome.storage.local`. |
+| `storage` | Stores the city selection, custom cities and settings in `chrome.storage.sync`. With Chrome or Firefox sync enabled, they are available on all your devices. Weather data, ISS orbital data, earthquake data, the aurora forecast and the tropical cyclone data are cached in `chrome.storage.local`. |
 
-Map data, the city catalogue and all calculations are entirely local. As long as weather, ISS, earthquakes and aurora are switched off (the default), the extension does not download anything from the internet and does not send any data.
+Map data, the city catalogue and all calculations are entirely local. As long as weather, ISS, earthquakes, aurora and tropical cyclones are switched off (the default), the extension does not download anything from the internet and does not send any data.
 
 With the weather display switched on, the coordinates of the selected cities (rounded to two decimal places) are sent to the free weather API of [Open-Meteo](https://open-meteo.com/). Neither your own location nor any other personal data is transmitted, and no API key is required. The results are cached for 15 minutes so that not every new tab triggers a request. Free use of Open-Meteo is limited to non-commercial purposes.
 
@@ -95,6 +97,8 @@ With the ISS display switched on, the extension downloads the current orbital el
 With the earthquake display switched on, the extension downloads the list of earthquakes of the last 24 hours from the [USGS](https://earthquake.usgs.gov/earthquakes/feed/) at most every 10 minutes. Depending on the selected minimum magnitude, one of the public feeds is requested. The request is the same for all users and contains no data about you or your cities.
 
 With the aurora display switched on, the extension downloads the current forecast from the [NOAA Space Weather Prediction Center](https://www.swpc.noaa.gov/products/aurora-30-minute-forecast) at most every 10 minutes. This request, too, is the same for all users and contains no data about you or your cities.
+
+With the tropical cyclone display switched on, the extension downloads at most every 30 minutes the list of tropical cyclones from the [Global Disaster Alert and Coordination System (GDACS)](https://www.gdacs.org/) of the United Nations and the European Commission, plus the track and forecast of each active storm. These requests, too, are the same for all users and contain no data about you or your cities.
 
 ## Project structure
 
@@ -112,6 +116,7 @@ weltkarte/
 ├── cities.js                  Shared: city catalogue, default selection, storage access, flag helpers
 ├── weather.js                 Load and cache weather data from Open-Meteo, draw weather icons
 ├── iss.js                     Load and cache ISS orbital elements from CelesTrak, compute position and ground track
+├── storms.js                  Load tropical cyclones from GDACS, reduce them to track, forecast and cone of uncertainty, and cache them
 ├── data/countries-110m.json   Country outlines as TopoJSON (scale 1:110 million)
 ├── flags/                     Country flags as SVG (4:3) from flag-icons, with their own MIT licence
 ├── docs/                      Screenshots for the README
@@ -150,7 +155,7 @@ Enter the name in the local language, or in English for non-Latin scripts; place
 
 ## Version
 
-1.12.0
+1.13.0
 
 ## Licence
 

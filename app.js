@@ -19,6 +19,8 @@ let SHOW_QUAKES = DEFAULT_SETTINGS.showQuakes;
 let QUAKE_MIN_MAG = DEFAULT_SETTINGS.quakeMinMag;
 let SHOW_AURORA = DEFAULT_SETTINGS.showAurora;
 let SHOW_GRID = DEFAULT_SETTINGS.showGrid;
+let SHOW_WORK = DEFAULT_SETTINGS.showWorkHours;
+let SHOW_STORMS = DEFAULT_SETTINGS.showStorms;
 let weather = new Map();   // weatherKey(city) -> { temp, code, day } (weather.js)
 let weatherLoadedAt = 0;
 
@@ -70,6 +72,14 @@ function canvasColors(t) {
     gridLine: rgba(t.text, dark ? 0.3 : 0.4),
     gridLabel: rgba(t.text, dark ? 0.5 : 0.6),
     dateLine: rgba(t.accent, 0.75),
+    // Arbeitszeit und Wirbelsturm-Kategorien in festen Farben, unabhängig vom Theme.
+    work: dark ? '#4ad68a' : '#1f9d55',
+    stormTD: dark ? '#6cb4ff' : '#2f7fd6',
+    stormTS: dark ? '#ffd24d' : '#c99400',
+    stormHU: dark ? '#ff6b3d' : '#d9481c',
+    stormTrack: rgba(t.text, dark ? 0.55 : 0.6),
+    stormCone: rgba(t.text, dark ? 0.08 : 0.1),
+    stormConeEdge: rgba(t.text, dark ? 0.3 : 0.35),
   };
 }
 
@@ -445,6 +455,155 @@ function renderGrid() {
   ctx.restore();
 }
 
+// ---------- Wirbelstürme ----------
+
+let storms = [];          // aktive Stürme (storms.js)
+let stormsLoaded = false;
+let stormsLoadedAt = 0;
+
+async function refreshStorms() {
+  if (!SHOW_STORMS) return;
+  stormsLoadedAt = Date.now();
+  storms = await fetchStorms();
+  stormsLoaded = true;
+  render(new Date());
+}
+
+// Bildschirmpunkte zu [lon, lat], über die Datumsgrenze hinweg stetig (x kann über den Kartenrand
+// hinausgehen). Gezeichnet wird mit forEachWrap() dreimal versetzt, damit beide Ränder stimmen.
+function unwrappedXY(pts) {
+  if (!pts.length) return [];
+  const x0 = projX(pts[0][0]);
+  let prev = pts[0][0], acc = 0;
+  return pts.map(([lon, lat]) => {
+    const d = lon - prev;
+    acc += d - 360 * Math.round(d / 360);
+    prev = lon;
+    return [x0 + acc / 360 * cssW, projY(lat)];
+  });
+}
+const forEachWrap = fn => { for (const off of [-cssW, 0, cssW]) fn(off); };
+
+const stormColor = cat => COLORS['storm' + cat] || COLORS.stormTrack;
+const STORM_CAT_KEYS = { TD: 'storm.td', TS: 'storm.ts', HU: 'storm.hu' };
+
+// Wirbelsturm-Symbol: Auge mit zwei Spiralarmen; auf der Südhalbkugel gespiegelt,
+// weil sich Stürme dort im Uhrzeigersinn drehen.
+function drawCyclone(x, y, r, color, south) {
+  ctx.save();
+  ctx.translate(x, y);
+  if (south) ctx.scale(-1, 1);
+  const a = r * 0.4;
+  const shape = new Path2D();
+  for (const s of [1, -1]) {
+    shape.moveTo(s * a, 0);
+    shape.quadraticCurveTo(s * a, -s * r, -s * r * 0.6, -s * r * 0.95);
+  }
+  shape.moveTo(a, 0);
+  shape.arc(0, 0, a, 0, Math.PI * 2);
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = COLORS.dotStroke;
+  ctx.lineWidth = r * 0.42;
+  ctx.stroke(shape);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = r * 0.24;
+  ctx.stroke(shape);
+  ctx.restore();
+}
+
+function renderStorms() {
+  if (!SHOW_STORMS) return;
+  ctx.save();
+  for (const s of storms) {
+    // Unsicherheitskegel der Vorhersage
+    ctx.fillStyle = COLORS.stormCone;
+    ctx.strokeStyle = COLORS.stormConeEdge;
+    ctx.lineWidth = 1;
+    for (const ring of s.cone) {
+      const xy = unwrappedXY(ring);
+      forEachWrap(off => {
+        ctx.beginPath();
+        xy.forEach(([x, y], i) => (i ? ctx.lineTo(x + off, y) : ctx.moveTo(x + off, y)));
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      });
+    }
+
+    // Zugbahn: beobachtet durchgezogen, Vorhersage gestrichelt, eingefärbt nach Kategorie.
+    const xy = unwrappedXY(s.points);
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 2;
+    for (let i = 1; i < xy.length; i++) {
+      const [, , , cat, fc] = s.points[i];
+      ctx.strokeStyle = stormColor(cat);
+      ctx.setLineDash(fc ? [4, 4] : []);
+      forEachWrap(off => {
+        ctx.beginPath();
+        ctx.moveTo(xy[i - 1][0] + off, xy[i - 1][1]);
+        ctx.lineTo(xy[i][0] + off, xy[i][1]);
+        ctx.stroke();
+      });
+    }
+    ctx.setLineDash([]);
+    ctx.lineWidth = 1;
+    s.points.forEach(([, , , cat, fc], i) => {
+      if (!fc) return;
+      ctx.fillStyle = COLORS.labelBg;
+      ctx.strokeStyle = stormColor(cat);
+      forEachWrap(off => { ctx.beginPath(); ctx.arc(xy[i][0] + off, xy[i][1], 2.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); });
+    });
+
+    // Aktuelle Position
+    if (s.lat > LAT_MAX || s.lat < LAT_MIN) continue;
+    const x = projX(s.lon), y = projY(s.lat);
+    drawCyclone(x, y, 9, stormColor(s.cat), s.lat < 0);
+    const lines = [];
+    if (STORM_CAT_KEYS[s.cat]) lines.push(tr(STORM_CAT_KEYS[s.cat]));
+    if (s.wind) lines.push(tr('storm.wind', { v: s.wind }));
+    lines.push(formatLatLon(s.lat, s.lon, 1));
+    if (s.advisory) lines.push(tr('storm.updated', { time: `${weekdayIn(LOCAL_TZ, new Date(s.advisory))} ${timeIn(LOCAL_TZ, new Date(s.advisory))}` }));
+    hoverTargets.push({ x, y, r: 12, title: tr('storm.title', { name: s.name }), lines });
+  }
+  ctx.restore();
+}
+
+// ---------- Arbeitszeit ----------
+
+// Übliche Bürozeit in Ortszeit. Arbeitswoche Mo–Fr, außer in Ländern mit Wochenende
+// Freitag/Samstag (So–Do) bzw. Donnerstag/Freitag (Sa–Mi). Feiertage bleiben unberücksichtigt.
+const WORK_START = 9, WORK_END = 17;
+const WORKWEEK_SUN_THU = new Set(['bh', 'dz', 'eg', 'il', 'iq', 'jo', 'kw', 'ly', 'om', 'qa', 'sa', 'sd', 'sy', 'ye']);
+const WORKWEEK_SAT_WED = new Set(['af', 'ir']);
+const WEEKDAY_INDEX = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+const workFmt = new Map();
+
+function isWorkTime(c, now) {
+  if (!workFmt.has(c.tz)) {
+    workFmt.set(c.tz, new Intl.DateTimeFormat('en-US', { timeZone: c.tz, weekday: 'short', hour: 'numeric', hourCycle: 'h23' }));
+  }
+  const parts = workFmt.get(c.tz).formatToParts(now).reduce((o, p) => (o[p.type] = p.value, o), {});
+  const day = WEEKDAY_INDEX[parts.weekday];
+  const hour = +parts.hour;
+  const country = (c.country || '').toLowerCase();
+  const days = WORKWEEK_SUN_THU.has(country) ? [0, 1, 2, 3, 4]
+    : WORKWEEK_SAT_WED.has(country) ? [6, 0, 1, 2, 3] : [1, 2, 3, 4, 5];
+  return days.includes(day) && hour >= WORK_START && hour < WORK_END;
+}
+
+// Aktentasche (s = Kantenlänge, x/y = linke obere Ecke).
+function drawBriefcase(x, y, s, color) {
+  const h = s * 0.66, top = y + s - h;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(1, s / 9);
+  ctx.strokeRect(x + s * 0.33, top - s * 0.2, s * 0.34, s * 0.2);
+  ctx.fillStyle = color;
+  roundRect(x, top, s, h, s * 0.12);
+  ctx.fill();
+  ctx.fillStyle = COLORS.labelBg;
+  ctx.fillRect(x, top + h * 0.38, s, Math.max(1, s / 10));
+}
+
 // ---------- Flaggen ----------
 
 const flagImages = new Map();   // Ländercode -> HTMLImageElement
@@ -487,6 +646,7 @@ function cityTooltipLines(c, now) {
   }
   const p = SHOW_AURORA ? auroraAt(aurora, c.lat, c.lon) : 0;
   if (p > 0) lines.push(tr('aurora.city', { p }));
+  if (SHOW_WORK) lines.push(tr(isWorkTime(c, now) ? 'work.now' : 'work.off'));
   return lines;
 }
 
@@ -861,6 +1021,8 @@ function renderLayers(now) {
 
   hoverTargets = [];
 
+  renderStorms();
+
   // Beben: nur Positionen und Tooltips, gezeichnet werden sie in compose().
   renderQuakes(now);
 
@@ -945,6 +1107,10 @@ function updateLegend() {
   document.getElementById('legendIss').hidden = !(SHOW_ISS && issElements);
   document.getElementById('legendQuake').hidden = !(SHOW_QUAKES && quakesLoaded);
   document.getElementById('legendAurora').hidden = !(SHOW_AURORA && aurora);
+  document.getElementById('legendWork').hidden = !SHOW_WORK;
+  const legendStorm = document.getElementById('legendStorm');
+  legendStorm.hidden = !(SHOW_STORMS && stormsLoaded);
+  legendStorm.querySelector('span').textContent = tr(storms.length ? 'legend.storm' : 'legend.stormNone');
 }
 
 function drawCities(now, localOff) {
@@ -971,7 +1137,8 @@ function drawCities(now, localOff) {
     const name = day !== localDay ? `${c.name} · ${weekdayIn(c.tz, now)}` : c.name;
     const wx = SHOW_WEATHER ? weather.get(weatherKey(c)) : null;
     const flag = SHOW_FLAGS ? flagImage(c.country) : null;
-    return { c, x, y, isLocal, name, time: timeIn(c.tz, now), wx, flag };
+    const work = SHOW_WORK && isWorkTime(c, now);
+    return { c, x, y, isLocal, name, time: timeIn(c.tz, now), wx, flag, work };
   });
 
   // Flagge im Seitenverhältnis 4:3, so hoch wie die Großbuchstaben des Namens.
@@ -982,19 +1149,22 @@ function drawCities(now, localOff) {
   const iconSize = Math.round(timeSize * 1.15);
   const tempSize = Math.round(12 * scale);
   const tempFont = `${tempSize}px "Segoe UI", system-ui, sans-serif`;
+  const workSize = Math.round(timeSize * 0.8);
+  const workGap = 6;
 
   for (const it of items) {
     ctx.font = `${nameSize}px "Segoe UI", system-ui, sans-serif`;
     const wName = ctx.measureText(it.name).width + (it.flag ? flagW + flagGap : 0);
     ctx.font = `600 ${timeSize}px "Segoe UI", system-ui, sans-serif`;
     const wTime = ctx.measureText(it.time).width;
+    const wWork = it.work ? workGap + workSize : 0;
     let wWeather = 0;
     if (it.wx) {
       it.temp = formatTemp(it.wx.temp, TEMP_UNIT);
       ctx.font = tempFont;
       wWeather = 8 + iconSize + 3 + ctx.measureText(it.temp).width;
     }
-    const w = Math.max(wName, wTime + wWeather) + padX * 2;
+    const w = Math.max(wName, wTime + wWork + wWeather) + padX * 2;
     const h = nameSize + timeSize + gap + padY * 2;
 
     const { x, y } = it;
@@ -1068,8 +1238,12 @@ function drawCities(now, localOff) {
     const rowY = box.y + padY + nameSize + gap;
     ctx.fillText(it.time, box.x + padX, rowY);
 
+    if (it.work) {
+      drawBriefcase(box.x + padX + wTime + workGap, rowY + (timeSize - workSize) / 2 + 1, workSize, COLORS.work);
+    }
+
     if (it.wx) {
-      const ix = box.x + padX + wTime + 8;
+      const ix = box.x + padX + wTime + wWork + 8;
       const iy = rowY + (timeSize - iconSize) / 2 + 1;
       drawWeatherIcon(ctx, weatherKind(it.wx.code), it.wx.day, ix, iy, iconSize, COLORS.weather);
       ctx.font = tempFont;
@@ -1163,6 +1337,7 @@ function tick() {
     if (SHOW_ISS && now.getTime() - issLoadedAt > ISS_TLE_TTL) refreshIss();
     if (SHOW_QUAKES && now.getTime() - quakesLoadedAt > QUAKE_TTL) refreshQuakes();
     if (SHOW_AURORA && now.getTime() - auroraLoadedAt > AURORA_TTL) refreshAurora();
+    if (SHOW_STORMS && now.getTime() - stormsLoadedAt > STORM_TTL) refreshStorms();
   }
 }
 
@@ -1185,12 +1360,15 @@ function tick() {
   QUAKE_MIN_MAG = settings.quakeMinMag;
   SHOW_AURORA = settings.showAurora;
   SHOW_GRID = settings.showGrid;
+  SHOW_WORK = settings.showWorkHours;
+  SHOW_STORMS = settings.showStorms;
   setTheme(themeState);
   resize();
   refreshWeather();
   refreshIss();
   refreshQuakes();
   refreshAurora();
+  refreshStorms();
 
   onThemeChanged(setTheme);
 
@@ -1209,6 +1387,8 @@ function tick() {
     QUAKE_MIN_MAG = s.quakeMinMag;
     SHOW_AURORA = s.showAurora;
     SHOW_GRID = s.showGrid;
+    SHOW_WORK = s.showWorkHours;
+    SHOW_STORMS = s.showStorms;
     updateHeader(new Date());
     render(new Date());
     refreshWeather();   // holt nur fehlende/veraltete Städte nach (Cache)
@@ -1216,6 +1396,7 @@ function tick() {
     // Neu laden beim Einschalten oder wenn die Mindeststärke einen anderen Feed braucht.
     if (SHOW_QUAKES && (!quakesLoaded || quakeFeedLoaded !== quakeFeed(QUAKE_MIN_MAG))) refreshQuakes();
     if (SHOW_AURORA && !aurora) refreshAurora();
+    if (SHOW_STORMS && !stormsLoaded) refreshStorms();
   });
 
   // openOptionsPage schlägt fehl, wenn Chrome noch ein Manifest ohne options_ui
