@@ -16,10 +16,12 @@ Browser-Erweiterung (Manifest V3) für Chrome und Firefox, die die Seite „Neue
 - **ISS (optional)**: Zeigt die aktuelle Position der Internationalen Raumstation als kleines Symbol, dazu ihre Bahnspur: einen halben Umlauf zurück (blass) und einen Umlauf voraus (gestrichelt). Die Position wird alle 10 Sekunden aktualisiert. Beim Überfahren mit der Maus zeigt ein Tooltip Koordinaten und Bahnhöhe.
 - **Erdbeben (optional)**: Markiert die Erdbeben der letzten 24 Stunden als rote Kreise, deren Größe mit der Stärke wächst. Die Kreise „atmen“ langsam, und von jedem läuft in Abständen von knapp 4 Sekunden eine blasse Welle nach außen, bei Beben der letzten Stunde zwei. Ältere Beben werden blasser. Bei der Systemeinstellung „Bewegung reduzieren“ bleiben die Markierungen statisch. Die Mindeststärke ist einstellbar (ab 2,5 bis ab 6,0, Standard ab 4,5). Beim Überfahren mit der Maus zeigt ein Tooltip Stärke, Region, Zeitpunkt, Koordinaten und Herdtiefe. Daten vom USGS, alle 10 Minuten aktualisiert.
 - **Polarlichter (optional)**: Zeigt die Kurzfrist-Vorhersage (30–90 Minuten) des NOAA Space Weather Prediction Center (OVATION-Modell), wo Polarlicht zu sehen sein könnte, als weich gezeichnete Fläche: grün bei geringer, über gelb bis rot bei hoher Wahrscheinlichkeit. Beim Überfahren mit der Maus zeigt ein Tooltip die Wahrscheinlichkeit an dieser Stelle und den Vorhersagezeitpunkt; der Tooltip einer Stadt nennt sie ebenfalls, sofern sie über 0 % liegt. Alle 10 Minuten aktualisiert.
+- **Tropische Wirbelstürme (optional)**: Zeigt aktive Hurrikane, Taifune und Zyklone weltweit mit einem Wirbel-Symbol an ihrer aktuellen Position, dazu die bisherige Zugbahn (durchgezogen), die Vorhersage (gestrichelt) und den Unsicherheitskegel. Die Farbe richtet sich nach der Stärke: blau Tropisches Tiefdruckgebiet, gelb Tropischer Sturm, orange Hurrikan/Taifun. Beim Überfahren mit der Maus zeigt ein Tooltip Name, Stärke, höchste Windgeschwindigkeit, Position und Stand der Daten. Ist gerade kein Sturm aktiv, steht das in der Legende. Daten vom [GDACS](https://www.gdacs.org/), alle 30 Minuten aktualisiert.
 - **Gradnetz und Linien (optional)**: Blendet ein dezentes Gradnetz im Abstand von 30° ein, dazu beschriftete Linien für Äquator, Wendekreise, nördlichen Polarkreis und Datumsgrenze. Die Datumsgrenze folgt einem vereinfachten Verlauf (Beringstraße, Aleuten, Kiribati, Samoa/Tonga). Der südliche Polarkreis liegt außerhalb des Kartenausschnitts.
 - **Städte mit Uhrzeit**: Jede ausgewählte Stadt bekommt ein Label mit Name und Ortszeit. Liegt die Stadt bereits an einem anderen Tag als du, steht zusätzlich der Wochentag dabei. Labels werden automatisch so platziert, dass sie sich möglichst nicht überlappen, bei Bedarf mit Hilfslinie.
 - **Stadt-Infos im Tooltip**: Beim Überfahren einer Stadt (Punkt oder Label) mit der Maus zeigt ein Tooltip Breiten- und Längengrad sowie Sonnenaufgang, Sonnenuntergang und Tageslänge für den heutigen Tag, jeweils in Ortszeit. Nördlich bzw. südlich der Polarkreise steht dort gegebenenfalls „Polartag“ oder „Polarnacht“.
 - **Landesflaggen (optional)**: Links neben dem Ortsnamen steht die Flagge des zugehörigen Landes. Für eigene Städte lässt sich das Land beim Anlegen auswählen.
+- **Arbeitszeit (optional)**: Städte, in denen gerade übliche Bürozeit ist (werktags 9–17 Uhr Ortszeit), bekommen eine grüne Aktentasche neben der Uhrzeit; der Tooltip der Stadt sagt, ob dort gerade Arbeitszeit ist. In Ländern mit Wochenende am Freitag und Samstag (z. B. Saudi-Arabien, Israel, Ägypten) zählen Sonntag bis Donnerstag als Werktage, in Iran und Afghanistan Samstag bis Mittwoch. Feiertage werden nicht berücksichtigt.
 - **Aktuelles Wetter (optional)**: Neben der Uhrzeit jeder Stadt stehen die aktuelle Temperatur (wahlweise in °C oder °F) und ein kleines Wettersymbol (klar, teils bewölkt, bewölkt, Nebel, Regen, Schnee, Gewitter; nachts mit Mond). Die Symbole übernehmen die Farben des aktiven Themes.
 - **Eigene Zeitzone hervorgehoben**: Städte in deiner Zeitzone und der passende Zeitzonen-Streifen sind orange markiert.
 - **Zeitzonenleiste**: Unter der Karte steht für jede Zone von UTC−12 bis UTC+12 die aktuelle Uhrzeit.
@@ -28,7 +30,7 @@ Browser-Erweiterung (Manifest V3) für Chrome und Firefox, die die Seite „Neue
   - Zwölf Farb-Themes (Nacht, Hell, Atlas, Ozean, Abendrot, Terminal, Herbst, Hochkontrast, Rosé, Neon, Golden, Wiese) mit Vorschau
   - Eigenes Theme: alle Karten- und Oberflächenfarben sowie die Nachtintensität frei einstellbar
   - Auswahl aus 101 Städten, gruppiert nach Regionen (Nordamerika, Mittel- & Südamerika, Europa, Afrika, Asien, Ozeanien)
-  - Sonne, Mond, ISS, Erdbeben (mit Mindeststärke), Polarlichter, „Mittag in der Mitte“, Gradnetz, Landesflaggen und Wetteranzeige einzeln ein- und ausschalten (Sonne und Mond sind standardmäßig an)
+  - Sonne, Mond, ISS, Erdbeben (mit Mindeststärke), Polarlichter, Wirbelstürme, „Mittag in der Mitte“, Gradnetz, Landesflaggen, Arbeitszeit und Wetteranzeige einzeln ein- und ausschalten (Sonne und Mond sind standardmäßig an)
   - Uhrzeitformat: 24 Stunden (Standard) oder 12 Stunden mit AM/PM; gilt für Kopfzeile, Städte, Zeitzonenleiste und Sonnenzeiten
   - Temperatureinheit: °C (Standard) oder °F
   - Sprache: Deutsch (Standard), Dänisch, Englisch, Französisch, Italienisch, Kroatisch, Niederländisch, Schwedisch oder Spanisch; gilt für alle Texte auf Karte und Einstellungsseite, offene Tabs wechseln sofort. Ortsnamen stehen unabhängig davon in der jeweiligen Landessprache (z. B. „Lisboa“, „København“, „Ciudad de México“), bei nicht-lateinischer Schrift auf Englisch (z. B. „Tokyo“, „Moscow“, „Cairo“). Ländernamen, Datum und Wochentage folgen der gewählten Sprache.
@@ -84,9 +86,9 @@ Die Add-on-ID `weltzeit-karte@plattsnacker` ist im Manifest fest eingetragen. Oh
 
 | Berechtigung | Zweck |
 | --- | --- |
-| `storage` | Speichert die Städteauswahl, eigene Städte und Einstellungen in `chrome.storage.sync`. Mit aktivierter Chrome- bzw. Firefox-Synchronisierung sind sie auf allen deinen Geräten verfügbar. Wetterdaten, ISS-Bahndaten, Erdbebendaten und die Polarlicht-Vorhersage werden in `chrome.storage.local` zwischengespeichert. |
+| `storage` | Speichert die Städteauswahl, eigene Städte und Einstellungen in `chrome.storage.sync`. Mit aktivierter Chrome- bzw. Firefox-Synchronisierung sind sie auf allen deinen Geräten verfügbar. Wetterdaten, ISS-Bahndaten, Erdbebendaten, die Polarlicht-Vorhersage und die Wirbelsturmdaten werden in `chrome.storage.local` zwischengespeichert. |
 
-Kartendaten, Städtekatalog und Berechnungen sind vollständig lokal. Solange Wetter, ISS, Erdbeben und Polarlichter ausgeschaltet sind (Standard), lädt die Erweiterung nichts aus dem Internet und sendet keine Daten.
+Kartendaten, Städtekatalog und Berechnungen sind vollständig lokal. Solange Wetter, ISS, Erdbeben, Polarlichter und Wirbelstürme ausgeschaltet sind (Standard), lädt die Erweiterung nichts aus dem Internet und sendet keine Daten.
 
 Mit eingeschalteter Wetteranzeige werden die Koordinaten der ausgewählten Städte (auf zwei Nachkommastellen gerundet) an die freie Wetter-API von [Open-Meteo](https://open-meteo.com/) gesendet. Es werden weder dein eigener Standort noch andere persönliche Daten übertragen, und es ist kein API-Schlüssel nötig. Die Ergebnisse werden 15 Minuten lang zwischengespeichert, damit nicht jeder neue Tab eine Anfrage auslöst. Die kostenlose Nutzung von Open-Meteo ist auf nicht-kommerzielle Zwecke beschränkt.
 
@@ -95,6 +97,8 @@ Mit eingeschalteter ISS-Anzeige lädt die Erweiterung höchstens alle 6 Stunden 
 Mit eingeschalteter Erdbebenanzeige lädt die Erweiterung höchstens alle 10 Minuten die Liste der Erdbeben der letzten 24 Stunden vom [USGS](https://earthquake.usgs.gov/earthquakes/feed/). Je nach gewählter Mindeststärke wird einer der öffentlichen Feeds abgefragt. Die Anfrage ist für alle Nutzer gleich und enthält keine Daten über dich oder deine Städte.
 
 Mit eingeschalteter Polarlicht-Anzeige lädt die Erweiterung höchstens alle 10 Minuten die aktuelle Vorhersage vom [NOAA Space Weather Prediction Center](https://www.swpc.noaa.gov/products/aurora-30-minute-forecast). Auch diese Anfrage ist für alle Nutzer gleich und enthält keine Daten über dich oder deine Städte.
+
+Mit eingeschalteter Wirbelsturm-Anzeige lädt die Erweiterung höchstens alle 30 Minuten die Liste der tropischen Wirbelstürme vom [Global Disaster Alert and Coordination System (GDACS)](https://www.gdacs.org/) der Vereinten Nationen und der EU-Kommission, für jeden aktiven Sturm zusätzlich dessen Zugbahn und Vorhersage. Auch diese Anfragen sind für alle Nutzer gleich und enthalten keine Daten über dich oder deine Städte.
 
 ## Projektstruktur
 
@@ -112,6 +116,7 @@ weltkarte/
 ├── cities.js                  Gemeinsam genutzt: Städtekatalog, Standardauswahl, Speicherzugriff, Flaggen-Hilfen
 ├── weather.js                 Wetterdaten von Open-Meteo laden und cachen, Wettersymbole zeichnen
 ├── iss.js                     ISS-Bahnelemente von CelesTrak laden und cachen, Position und Bahnspur berechnen
+├── storms.js                  Tropische Wirbelstürme von GDACS laden, auf Zugbahn, Vorhersage und Unsicherheitskegel reduzieren und cachen
 ├── data/countries-110m.json   Länderumrisse als TopoJSON (Maßstab 1:110 Mio.)
 ├── flags/                     Landesflaggen als SVG (4:3) aus flag-icons, mit eigener MIT-Lizenz
 ├── docs/                      Screenshots für die README

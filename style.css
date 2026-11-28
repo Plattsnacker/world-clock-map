@@ -194,3 +194,8 @@ body {
 .iss-icon .iss-truss { stroke: var(--text); stroke-width: 1.2; }
 .iss-icon .iss-panel { fill: var(--accent); }
 .iss-icon .iss-body  { fill: var(--text); }
+
+/* Wirbelsturm und Arbeitszeit in der Legende (Farben wie auf der Karte) */
+.storm-icon path { fill: none; stroke: #ff6b3d; stroke-width: 2.4; stroke-linecap: round; }
+.work-icon rect { fill: #4ad68a; }
+.work-icon .work-handle { fill: none; stroke: #4ad68a; stroke-width: 1.2; }
