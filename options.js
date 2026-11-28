@@ -12,6 +12,11 @@ const customEmptyEl = document.getElementById('customEmpty');
 const formEl = document.getElementById('customForm');
 const formErrorEl = document.getElementById('formError');
 
+// Versionsnummer aus dem Manifest, damit sie nur dort gepflegt werden muss.
+try {
+  document.getElementById('version').textContent = 'v' + chrome.runtime.getManifest().version;
+} catch { /* außerhalb der Erweiterung geöffnet */ }
+
 // ---------- Hilfsfunktionen ----------
 
 const timeFmt = new Map();

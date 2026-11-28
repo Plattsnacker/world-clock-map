@@ -10,13 +10,17 @@ const AURORA_TTL = 10 * 60 * 1000;   // NOAA rechnet etwa alle 5 Minuten neu
 const AURORA_CACHE_KEY = 'auroraCache';
 const AURORA_W = 360;   // Längen 0…359° O
 const AURORA_H = 181;   // Breiten −90…90°
+// Der NOAA-Feed enthält ein Artefakt: ein Band mit Werten bis einige Prozent um 0…−2° Breite.
+// Polarlicht wurde selbst bei extremen Stürmen nicht näher als etwa 20° am Äquator gesehen,
+// deshalb gilt alles darunter als 0.
+const AURORA_MIN_LAT = 20;
 
 // Index im Raster: Länge 0…359 (östlich), Breite −90…90.
 const auroraIndex = (lon, lat) => (((Math.round(lon) % 360) + 360) % 360) * AURORA_H + Math.round(lat) + 90;
 
-// Wahrscheinlichkeit in Prozent an einem Ort, 0 außerhalb des Rasters.
+// Wahrscheinlichkeit in Prozent an einem Ort, 0 außerhalb des Rasters und in Äquatornähe.
 function auroraAt(aurora, lat, lon) {
-  if (!aurora || lat < -90 || lat > 90) return 0;
+  if (!aurora || lat < -90 || lat > 90 || Math.abs(Math.round(lat)) < AURORA_MIN_LAT) return 0;
   return aurora.grid[auroraIndex(lon, lat)] || 0;
 }
 
